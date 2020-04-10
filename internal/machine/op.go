@@ -314,5 +314,7 @@ func (m *Machine) jmp() uint16 {
 	// memory (most significant first) and merge them.
 	m.cpu.PC = uint16(m.mem[m.cpu.PC+2])<<8 | uint16(m.mem[m.cpu.PC+1])
 
+	// As we're jumping the program counter there is no need to return a value
+	// for the main cycle to increment the counter.
 	return 0
 }
