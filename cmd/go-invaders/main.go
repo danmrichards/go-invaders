@@ -10,13 +10,22 @@ import (
 	"github.com/danmrichards/go-invaders/internal/machine"
 )
 
-var dir string
+var (
+	dir   string
+	debug bool
+)
 
 func main() {
 	flag.StringVar(&dir, "dir", "roms", "Path to directory containing ROM files")
+	flag.BoolVar(&debug, "debug", false, "Run the emulator in debug mode")
 	flag.Parse()
 
-	m := machine.New()
+	var opts []machine.Option
+	if debug {
+		opts = append(opts, machine.WithDebugEnabled())
+	}
+
+	m := machine.New(opts...)
 
 	if err := m.LoadROM(dir); err != nil {
 		log.Fatal(err)

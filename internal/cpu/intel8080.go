@@ -1,7 +1,14 @@
 package cpu
 
+// Intel8080 represents the Intel 8080 CPU.
 type Intel8080 struct {
 	// Working "scratchpad" registers.
+	//
+	// The 8080 allows these registers to be referenced in pairs, like so:
+	//
+	// B -> B & C
+	// D -> D & E
+	// H -> H & L
 	B byte
 	C byte
 	D byte
@@ -25,6 +32,7 @@ type Intel8080 struct {
 	IE byte
 }
 
+// NewIntel8080 returns an instantiated Intel 8080.
 func NewIntel8080() *Intel8080 {
 	return &Intel8080{
 		CC: NewConditions(),
