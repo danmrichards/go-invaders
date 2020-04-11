@@ -7,6 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/danmrichards/go-invaders/internal/memory"
+
+	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/danmrichards/go-invaders/internal/machine"
 )
 
@@ -20,37 +23,34 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Run the emulator in debug mode")
 	flag.Parse()
 
-	var opts []machine.Option
+	// Instantiate 16K of memory.
+	mem := make(memory.Basic, 16384)
+
+	// Instantiate the Intel 8080.
+	var opts []cpu.Option
 	if debug {
-		opts = append(opts, machine.WithDebugEnabled())
+		opts = append(opts, cpu.WithDebugEnabled())
 	}
+	i80 := cpu.NewIntel8080(mem, opts...)
 
-	m := machine.New(opts...)
+	done := make(chan struct{})
 
+	// Instantiate the Space Invaders machine.
+	m := machine.New(i80, mem, done)
 	if err := m.LoadROM(dir); err != nil {
 		log.Fatal(err)
 	}
-
-	done := make(chan struct{})
 
 	// Basic shutdown handler.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		os.Exit(0)
+		close(done)
 	}()
 
-	for {
-		select {
-		case <-done:
-			break
-		default:
-		}
-
-		// Emulate a cycle.
-		if err := m.Cycle(); err != nil {
-			log.Fatal(err)
-		}
+	// Run the machine until it errors or we shutdown.
+	if err := m.Run(); err != nil {
+		log.Fatal(err)
 	}
 }

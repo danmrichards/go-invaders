@@ -65,7 +65,7 @@ func (m *Machine) loadROMPart(dir, part string) error {
 	}
 	defer rf.Close()
 
-	if _, err = rf.Read(m.mem[offset:]); err != nil {
+	if _, err = rf.Read(m.mem.Dump()[offset:]); err != nil {
 		return fmt.Errorf("could not read ROM part (%q): %w", path, err)
 	}
 

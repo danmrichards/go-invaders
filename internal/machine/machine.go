@@ -1,10 +1,12 @@
 package machine
 
-import icpu "github.com/danmrichards/go-invaders/internal/cpu"
+import (
+	"github.com/danmrichards/go-invaders/internal/memory"
+)
 
 // Machine emulates the Space Invaders hardware.
 type Machine struct {
-	cpu *icpu.Intel8080
+	cpu cpuStepper
 
 	// The Space Invaders Memory is mapped as follows:
 	//
@@ -14,37 +16,37 @@ type Machine struct {
 	// $4000 -> RAM mirror
 	//
 	// For more details on the ROM structure see LoadROM.
-	mem []byte
-
-	// Each supported opcode has a handler function.
-	opHandlers map[byte]opHandler
+	mem memory.ReadWriteDumper
 
 	// If set to true the emulation cycle will print debug information.
 	debug bool
-}
 
-// Option is a functional option that modifies a field on the machine.
-type Option func(*Machine)
-
-// WithDebugEnabled enables debug mode on the machine.
-func WithDebugEnabled() Option {
-	return func(m *Machine) {
-		m.debug = true
-	}
+	done <-chan struct{}
 }
 
 // New returns an instantiated Space Invaders machine.
-func New(opts ...Option) *Machine {
+func New(cpu cpuStepper, mem memory.ReadWriteDumper, done <-chan struct{}) *Machine {
 	m := &Machine{
-		cpu: icpu.NewIntel8080(),
-		mem: make([]byte, 16384),
+		cpu:  cpu,
+		mem:  mem,
+		done: done,
 	}
-
-	for _, o := range opts {
-		o(m)
-	}
-
-	m.registerOpHandlers()
 
 	return m
+}
+
+// Run emulates the Space Invaders machine.
+func (m *Machine) Run() error {
+	for {
+		select {
+		case <-m.done:
+			return nil
+		default:
+		}
+
+		// Emulate an instruction.
+		if err := m.cpu.Step(); err != nil {
+			return err
+		}
+	}
 }

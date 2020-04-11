@@ -1,9 +1,9 @@
 package cpu
 
-// Conditions represents the condition bits of the Intel 8080.
+// conditions represents the condition bits of the Intel 8080.
 //
 // Condition bits are used to reflect the results of data operations.
-type Conditions struct {
+type conditions struct {
 	// Carry bit is set and reset by certain data operations, and its status can
 	// be directly tested by a program. The operations which affect the Carry
 	// bit are addition, subtraction, rotate, and logical operations.
@@ -29,9 +29,9 @@ type Conditions struct {
 	p byte
 }
 
-// NewConditions returns an initialised set of CPU conditions.
-func NewConditions() Conditions {
-	return Conditions{
+// newConditions returns an initialised set of CPU conditions.
+func newConditions() conditions {
+	return conditions{
 		z:  1,
 		s:  1,
 		p:  1,
