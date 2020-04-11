@@ -62,7 +62,7 @@ func (i *Intel8080) registerOpHandlers() {
 		//0x2e: mvi("l"),
 		//0x2f: cma,
 		//0x30: sim,
-		//0x31: lxi("sp"),
+		0x31: i.lxiSP(),
 		//0x32: sta,
 		//0x33: inx("sp"),
 		//0x34: inr("M"),
@@ -141,14 +141,14 @@ func (i *Intel8080) registerOpHandlers() {
 		0x7d: i.movRR(&i.a, &i.l),
 		//0x7e: i.movRR(&i.a, &i.M),
 		0x7f: i.movRR(&i.a, &i.a),
-		//0x80: add("b"),
-		//0x81: add("c"),
-		//0x82: add("d"),
-		//0x83: add("e"),
-		//0x84: add("h"),
-		//0x85: add("l"),
-		//0x86: add("M"),
-		//0x87: add("a"),
+		0x80: i.add(i.b),
+		0x81: i.add(i.c),
+		0x82: i.add(i.d),
+		0x83: i.add(i.e),
+		0x84: i.add(i.h),
+		0x85: i.add(i.l),
+		//0x86: i.add(i.M),
+		0x87: i.add(i.a),
 		//0x88: adc("b"),
 		//0x89: adc("c"),
 		//0x8a: adc("d"),
@@ -311,10 +311,64 @@ func (i *Intel8080) movRR(dst, src *byte) opHandler {
 // This handler jumps the program counter to a given point in memory.
 func (i *Intel8080) jmp() uint16 {
 	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge thei.
-	i.pc = uint16(i.mem.Read(i.pc+2))<<8 | uint16(i.mem.Read(i.pc+1))
+	// memory (most significant first) and merge them.
+	i.pc = i.twoByteRead()
 
 	// As we're jumping the program counter there is no need to return a value
 	// for the main cycle to increment the counter.
 	return 0
+}
+
+// lxi is the "Load Immediate Stack Pointer" handler.
+func (i *Intel8080) lxiSP() opHandler {
+	return func() uint16 {
+		i.sp = i.twoByteRead()
+		return 3
+	}
+}
+
+// add is the "Add Register to Accumulator" handler.
+//
+// The given byte is added to the contents of the accumulator and relevant
+// condition bits are set.
+func (i *Intel8080) add(b byte) opHandler {
+	return func() uint16 {
+		// Perform the arithmetic at higher precision in order to capture the
+		// carry out.
+		ans := uint16(i.a) + uint16(b)
+
+		// Set the zero condition bit accordingly based on if the result of the
+		// arithmetic was zero.
+		//
+		// Determine the result being zero with a bitwise AND operation against
+		// 0xff (11111111 in base 2 and 255 in base 10).
+		//
+		// 00000000 & 11111111 = 0
+		i.cc.z = ans&0xff == 0
+
+		// Set the sign condition bit accordingly based on if the most
+		// significant bit on the result of the arithmetic was set.
+		//
+		// Determine the result being zero with a bitwise AND operation against
+		// 0x80 (10000000 in base 2 and 128 in base 10).
+		//
+		// 10000000 & 10000000 = 1
+		i.cc.s = ans&0x80 == 1
+
+		// Set the carry condition bit accordingly if the result of the
+		// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
+		// 10).
+		i.cc.cy = ans > 0xff
+
+		// Set the auxiliary carry condition bit accordingly if the result of
+		// the arithmetic has a carry on the third bit.
+		i.cc.ac = uint16(i.a&0x0f)+(ans&0x0f) > 0x0f
+
+		// Set the parity bit.
+		i.cc.setParity(uint8(ans))
+
+		// Finally update the accumulator.
+		i.a = uint8(ans)
+		return defaultInstructionLen
+	}
 }

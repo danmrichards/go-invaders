@@ -35,7 +35,7 @@ type Intel8080 struct {
 	pc uint16
 
 	// Conditions represents the condition bits of the CPU.
-	cc conditions
+	cc *conditions
 
 	// Interrupts enabled (1 = enabled, 0 = disabled).
 	ie byte
@@ -84,7 +84,7 @@ func (i *Intel8080) Step() error {
 
 	// Dump the assembly code if debug mode is on.
 	if i.debug {
-		asm, _ := dasm.Disassemble(i.mem.Dump(), int64(i.pc))
+		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc))
 		fmt.Println(asm)
 	}
 
@@ -104,4 +104,10 @@ func (i *Intel8080) Step() error {
 	i.pc += h()
 
 	return nil
+}
+
+// twoByteRead returns the next two bytes from memory (most significant first)
+// merged together to form a single memory address.
+func (i *Intel8080) twoByteRead() uint16 {
+	return uint16(i.mem.Read(i.pc+2))<<8 | uint16(i.mem.Read(i.pc+1))
 }

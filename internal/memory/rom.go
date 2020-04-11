@@ -1,4 +1,4 @@
-package machine
+package memory
 
 import (
 	"errors"
@@ -24,7 +24,7 @@ var romOffsets = map[string]uint32{
 // $0800-$0fff: invaders.g
 // $1000-$17ff: invaders.f
 // $1800-$1fff: invaders.e
-func (m *Machine) LoadROM(dir string) error {
+func (b Basic) LoadROM(dir string) error {
 	if dir == "" {
 		return errors.New("ROM directory cannot be empty")
 	}
@@ -32,23 +32,23 @@ func (m *Machine) LoadROM(dir string) error {
 		return err
 	}
 
-	if err := m.loadROMPart(dir, "invaders.h"); err != nil {
+	if err := b.loadROMPart(dir, "invaders.h"); err != nil {
 		return err
 	}
-	if err := m.loadROMPart(dir, "invaders.g"); err != nil {
+	if err := b.loadROMPart(dir, "invaders.g"); err != nil {
 		return err
 	}
-	if err := m.loadROMPart(dir, "invaders.f"); err != nil {
+	if err := b.loadROMPart(dir, "invaders.f"); err != nil {
 		return err
 	}
-	if err := m.loadROMPart(dir, "invaders.e"); err != nil {
+	if err := b.loadROMPart(dir, "invaders.e"); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Machine) loadROMPart(dir, part string) error {
+func (b Basic) loadROMPart(dir, part string) error {
 	path := filepath.Join(dir, part)
 
 	// Get the correct memory offset for this ROM part.
@@ -65,7 +65,7 @@ func (m *Machine) loadROMPart(dir, part string) error {
 	}
 	defer rf.Close()
 
-	if _, err = rf.Read(m.mem.Dump()[offset:]); err != nil {
+	if _, err = rf.Read(b[offset:]); err != nil {
 		return fmt.Errorf("could not read ROM part (%q): %w", path, err)
 	}
 

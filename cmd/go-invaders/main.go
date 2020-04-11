@@ -25,6 +25,9 @@ func main() {
 
 	// Instantiate 16K of memory.
 	mem := make(memory.Basic, 16384)
+	if err := mem.LoadROM(dir); err != nil {
+		log.Fatal(err)
+	}
 
 	// Instantiate the Intel 8080.
 	var opts []cpu.Option
@@ -37,9 +40,6 @@ func main() {
 
 	// Instantiate the Space Invaders machine.
 	m := machine.New(i80, mem, done)
-	if err := m.LoadROM(dir); err != nil {
-		log.Fatal(err)
-	}
 
 	// Basic shutdown handler.
 	c := make(chan os.Signal)

@@ -1,6 +1,6 @@
 package memory
 
-// Basic is a basic in-memory implementation of the Space Invaders memory.
+// Basic is an in-memory implementation of the Space Invaders memory.
 //
 // The Space Invaders memory is mapped as follows:
 //
@@ -17,12 +17,12 @@ func (b Basic) Read(addr uint16) byte {
 	return b[addr]
 }
 
+// ReadAll returns the full memory contents.
+func (b Basic) ReadAll() []byte {
+	return b
+}
+
 // Write writes the value v into memory at the given address.
 func (b Basic) Write(addr uint16, v byte) {
 	b[addr] = v
-}
-
-// Dump returns a full dump of the memory contents.
-func (b Basic) Dump() []byte {
-	return b
 }
