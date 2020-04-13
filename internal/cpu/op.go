@@ -16,65 +16,65 @@ func (i *Intel8080) registerOpHandlers() {
 		0x00: i.nop,
 		0x01: i.lxi(&i.b, &i.c),
 		//0x02: stax("b"),
-		//0x03: inx("b"),
-		//0x04: inr("b"),
-		//0x05: dcr("b"),
+		0x03: i.inx(&i.b, &i.c),
+		0x04: i.inr(&i.b),
+		0x05: i.dcr(&i.b),
 		//0x06: mvi("b"),
 		//0x07: rlc,
-		//0x08: ignore,
+		0x08: i.ignore,
 		//0x09: dad("b"),
 		//0x0a: ldax("b"),
 		//0x0b: dcx("b"),
-		//0x0c: inr("c"),
-		//0x0d: dcr("c"),
+		0x0c: i.inr(&i.c),
+		0x0d: i.dcr(&i.c),
 		//0x0e: mvi("c"),
 		//0x0f: rrc,
-		//0x10: ignore,
-		//0x11: lxi("d"),
+		0x10: i.ignore,
+		0x11: i.lxi(&i.d, &i.e),
 		//0x12: stax("d"),
-		//0x13: inx("d"),
-		//0x14: inr("d"),
-		//0x15: dcr("d"),
+		0x13: i.inx(&i.d, &i.e),
+		0x14: i.inr(&i.d),
+		0x15: i.dcr(&i.d),
 		//0x16: mvi("d"),
 		//0x17: ral,
-		//0x18: ignore,
+		0x18: i.ignore,
 		//0x19: dad("d"),
 		//0x1a: ldax("d"),
-		//0x1b: dcx("d"),
-		//0x1c: inr("e"),
-		//0x1d: dcr("e"),
+		//0x1: dcx("d"),
+		0x1c: i.inr(&i.e),
+		0x1d: i.dcr(&i.e),
 		//0x1e: mvi("e"),
 		//0x1f: rar,
 		//0x20: rim,
-		//0x21: lxi("h"),
+		0x21: i.lxi(&i.h, &i.l),
 		//0x22: shld,
-		//0x23: inx("h"),
-		//0x24: inr("h"),
-		//0x25: dcr("h"),
+		0x23: i.inx(&i.h, &i.l),
+		0x24: i.inr(&i.h),
+		0x25: i.dcr(&i.h),
 		//0x26: mvi("h"),
 		//0x27: daa,
-		//0x28: ignore,
+		0x28: i.ignore,
 		//0x29: dad("h"),
 		//0x2a: lhld,
 		//0x2b: dcx("h"),
-		//0x2c: inr("l"),
-		//0x2d: dcr("l"),
+		0x2c: i.inr(&i.l),
+		0x2d: i.dcr(&i.l),
 		//0x2e: mvi("l"),
 		//0x2f: cma,
 		//0x30: sim,
-		0x31: i.lxiSP(),
+		0x31: i.lxiSP,
 		//0x32: sta,
-		//0x33: inx("sp"),
-		//0x34: inr("M"),
-		//0x35: dcr("M"),
+		0x33: i.inxSP,
+		0x34: i.inrM,
+		0x35: i.dcrM,
 		//0x36: mvi("M"),
 		//0x37: stc,
-		//0x38: ignore,
+		0x38: i.ignore,
 		//0x39: dad("sp"),
 		//0x3a: lda,
 		//0x3b: dcx("sp"),
-		//0x3c: inr("a"),
-		//0x3d: dcr("a"),
+		0x3c: i.inr(&i.a),
+		0x3d: i.dcr(&i.a),
 		//0x3e: mvi("a"),
 		//0x3f: cmc,
 		0x40: i.movRR(&i.b, &i.b),
@@ -147,7 +147,7 @@ func (i *Intel8080) registerOpHandlers() {
 		0x83: i.add(i.e),
 		0x84: i.add(i.h),
 		0x85: i.add(i.l),
-		//0x86: i.add(i.M),
+		0x86: i.addM,
 		0x87: i.add(i.a),
 		//0x88: adc("b"),
 		//0x89: adc("c"),
@@ -211,12 +211,12 @@ func (i *Intel8080) registerOpHandlers() {
 		0xc3: i.jmp,
 		//0xc4: cnz,
 		//0xc5: push("b"),
-		//0xc6: adi,
+		0xc6: i.adi,
 		//0xc7: rst(0),
 		//0xc8: rz,
 		//0xc9: ret,
 		//0xca: jz,
-		//0xcb: ignore,
+		0xcb: i.ignore,
 		//0xcc: cz,
 		//0xcd: call,
 		//0xce: aci,
@@ -230,11 +230,11 @@ func (i *Intel8080) registerOpHandlers() {
 		//0xd6: sui,
 		//0xd7: rst(2),
 		//0xd8: rc,
-		//0xd9: ignore,
+		0xd9: i.ignore,
 		//0xda: jc,
 		//0xdb: in,
 		//0xdc: cc,
-		//0xdd: ignore,
+		0xdd: i.ignore,
 		//0xde: sbi,
 		//0xdf: rst(3),
 		//0xe0: rpo,
@@ -250,7 +250,7 @@ func (i *Intel8080) registerOpHandlers() {
 		//0xea: jpe,
 		//0xeb: xchg,
 		//0xec: cpe,
-		//0xed: ignore,
+		0xed: i.ignore,
 		//0xee: xri,
 		//0xef: rst(5),
 		//0xf0: rp,
@@ -266,7 +266,7 @@ func (i *Intel8080) registerOpHandlers() {
 		//0xfa: jm,
 		//0xfb: ei,
 		//0xfc: cm,
-		//0xfd: ignore,
+		0xfd: i.ignore,
 		//0xfe: cpi,
 		//0xff: rst(7),
 	}
@@ -279,8 +279,7 @@ func (i *Intel8080) nop() uint16 {
 
 // lxi is the "Load Immediate Register" handler.
 //
-// This handler operates on a CPU register pair, the two components of the pair
-// accessed by x and y.
+// This handler operates on a CPU register pair.
 //
 // Because the 8080 works on little-endian byte order, the first register in the
 // pair stores the 8 most significant bits of an address while the second
@@ -320,55 +319,15 @@ func (i *Intel8080) jmp() uint16 {
 }
 
 // lxi is the "Load Immediate Stack Pointer" handler.
-func (i *Intel8080) lxiSP() opHandler {
-	return func() uint16 {
-		i.sp = i.twoByteRead()
-		return 3
-	}
+func (i *Intel8080) lxiSP() uint16 {
+	i.sp = i.twoByteRead()
+	return 3
 }
 
-// add is the "Add Register to Accumulator" handler.
+// ignore is an instruction that is completely ignored and returns the default
+// instruction length.
 //
-// The given byte is added to the contents of the accumulator and relevant
-// condition bits are set.
-func (i *Intel8080) add(b byte) opHandler {
-	return func() uint16 {
-		// Perform the arithmetic at higher precision in order to capture the
-		// carry out.
-		ans := uint16(i.a) + uint16(b)
-
-		// Set the zero condition bit accordingly based on if the result of the
-		// arithmetic was zero.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0xff (11111111 in base 2 and 255 in base 10).
-		//
-		// 00000000 & 11111111 = 0
-		i.cc.z = ans&0xff == 0
-
-		// Set the sign condition bit accordingly based on if the most
-		// significant bit on the result of the arithmetic was set.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0x80 (10000000 in base 2 and 128 in base 10).
-		//
-		// 10000000 & 10000000 = 1
-		i.cc.s = ans&0x80 == 1
-
-		// Set the carry condition bit accordingly if the result of the
-		// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
-		// 10).
-		i.cc.cy = ans > 0xff
-
-		// Set the auxiliary carry condition bit accordingly if the result of
-		// the arithmetic has a carry on the third bit.
-		i.cc.ac = uint16(i.a&0x0f)+(ans&0x0f) > 0x0f
-
-		// Set the parity bit.
-		i.cc.setParity(uint8(ans))
-
-		// Finally update the accumulator.
-		i.a = uint8(ans)
-		return defaultInstructionLen
-	}
+// Similar to a no-op but the Intel 8080 data book defines it differently.
+func (i *Intel8080) ignore() uint16 {
+	return defaultInstructionLen
 }
