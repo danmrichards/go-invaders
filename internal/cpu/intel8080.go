@@ -187,3 +187,9 @@ func (i *Intel8080) accumulatorSub(n byte) {
 	// Finally update the accumulator.
 	i.a = uint8(ans)
 }
+
+func (i *Intel8080) stackAdd(n uint16) {
+	i.sp = i.sp - 2
+	i.mem.Write(i.sp, uint8(n&0xff))
+	i.mem.Write(i.sp+1, uint8(n>>8))
+}

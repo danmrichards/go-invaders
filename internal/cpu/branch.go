@@ -8,7 +8,22 @@ func (i *Intel8080) jmp() uint16 {
 	// memory (most significant first) and merge them.
 	i.pc = i.twoByteRead()
 
-	// As we're jumping the program counter there is no need to return a value
-	// for the main cycle to increment the counter.
+	// As we're jumping the program counter there is no need to increment the
+	// program counter once this method returns.
+	return 0
+}
+
+// call is the "Call subroutine" handler.
+//
+// A call operation is unconditionally performed to subroutine sub.
+func (i *Intel8080) call() uint16 {
+	i.stackAdd(i.pc + 2)
+
+	// Jump the program to the subroutine indicated by the two immediate bytes
+	// in memory.
+	i.pc = i.twoByteRead()
+
+	// As we're unconditionally setting the program counter above, there is no
+	// need to increment the program counter once this method returns.
 	return 0
 }

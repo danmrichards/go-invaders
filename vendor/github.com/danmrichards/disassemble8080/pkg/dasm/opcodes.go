@@ -44,7 +44,7 @@ var disassemblers = map[byte]disassembler{
 	0x1d: dcr("E"),
 	0x1e: mvi("E"),
 	0x1f: rar,
-	0x20: rim,
+	0x20: ignore,
 	0x21: lxi("H"),
 	0x22: shld,
 	0x23: inx("H"),
@@ -60,7 +60,7 @@ var disassemblers = map[byte]disassembler{
 	0x2d: dcr("L"),
 	0x2e: mvi("L"),
 	0x2f: cma,
-	0x30: sim,
+	0x30: ignore,
 	0x31: lxi("SP"),
 	0x32: sta,
 	0x33: inx("SP"),
@@ -276,7 +276,7 @@ func nop(rb []byte, pc int64) (string, int64) {
 
 func lxi(r string) disassembler {
 	return func(rb []byte, pc int64) (string, int64) {
-		return fmt.Sprintf("LXI %s,#$%02X%02X", r, rb[pc+2], rb[pc+1]), 3
+		return fmt.Sprintf("LXI %s,#$%02x%02x", r, rb[pc+2], rb[pc+1]), 3
 	}
 }
 
@@ -306,7 +306,7 @@ func dcr(r string) disassembler {
 
 func mvi(r string) disassembler {
 	return func(rb []byte, pc int64) (string, int64) {
-		return fmt.Sprintf("MVI %s,#$%02X", r, rb[pc+1]), 2
+		return fmt.Sprintf("MVI %s,#$%02x", r, rb[pc+1]), 2
 	}
 }
 
@@ -315,7 +315,7 @@ func rlc(rb []byte, pc int64) (string, int64) {
 }
 
 func jmp(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JMP $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JMP $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func push(r string) disassembler {
@@ -358,12 +358,8 @@ func rar(rb []byte, pc int64) (string, int64) {
 	return "RAR", defaultInstructionLen
 }
 
-func rim(rb []byte, pc int64) (string, int64) {
-	return "RIM", defaultInstructionLen
-}
-
 func shld(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("SHLD $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("SHLD $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func daa(rb []byte, pc int64) (string, int64) {
@@ -371,19 +367,15 @@ func daa(rb []byte, pc int64) (string, int64) {
 }
 
 func lhld(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("LHLD $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("LHLD $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func cma(rb []byte, pc int64) (string, int64) {
 	return "CMA", defaultInstructionLen
 }
 
-func sim(rb []byte, pc int64) (string, int64) {
-	return "SIM", defaultInstructionLen
-}
-
 func sta(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("STA $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("STA $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func stc(rb []byte, pc int64) (string, int64) {
@@ -391,7 +383,7 @@ func stc(rb []byte, pc int64) (string, int64) {
 }
 
 func lda(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("LDA $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("LDA $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func cmc(rb []byte, pc int64) (string, int64) {
@@ -467,15 +459,15 @@ func pop(r string) disassembler {
 }
 
 func jnz(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JNZ $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JNZ $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func cnz(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CNZ $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CNZ $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func adi(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("ADI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("ADI #$%02x", rb[pc+1]), 2
 }
 
 func rst(i int) disassembler {
@@ -493,19 +485,19 @@ func ret(rb []byte, pc int64) (string, int64) {
 }
 
 func jz(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JZ $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JZ $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func cz(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CZ $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CZ $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func call(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CALL $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CALL $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func aci(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("ACI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("ACI #$%02x", rb[pc+1]), 2
 }
 
 func rnc(rb []byte, pc int64) (string, int64) {
@@ -513,19 +505,19 @@ func rnc(rb []byte, pc int64) (string, int64) {
 }
 
 func jnc(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JNC $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JNC $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func out(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("OUT #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("OUT #$%02x", rb[pc+1]), 2
 }
 
 func cnc(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CNC $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CNC $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func sui(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("SUI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("SUI #$%02x", rb[pc+1]), 2
 }
 
 func rc(rb []byte, pc int64) (string, int64) {
@@ -533,19 +525,19 @@ func rc(rb []byte, pc int64) (string, int64) {
 }
 
 func jc(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JC $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JC $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func in(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("IN #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("IN #$%02x", rb[pc+1]), 2
 }
 
 func cc(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CC $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CC $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func sbi(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("SBI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("SBI #$%02x", rb[pc+1]), 2
 }
 
 func rpo(rb []byte, pc int64) (string, int64) {
@@ -553,7 +545,7 @@ func rpo(rb []byte, pc int64) (string, int64) {
 }
 
 func jpo(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JPO $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JPO $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func xthl(rb []byte, pc int64) (string, int64) {
@@ -561,11 +553,11 @@ func xthl(rb []byte, pc int64) (string, int64) {
 }
 
 func cpo(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CPO $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CPO $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func ani(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("ANI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("ANI #$%02x", rb[pc+1]), 2
 }
 
 func rpe(rb []byte, pc int64) (string, int64) {
@@ -577,7 +569,7 @@ func pchl(rb []byte, pc int64) (string, int64) {
 }
 
 func jpe(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JPE $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JPE $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func xchg(rb []byte, pc int64) (string, int64) {
@@ -585,11 +577,11 @@ func xchg(rb []byte, pc int64) (string, int64) {
 }
 
 func cpe(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CPE $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CPE $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func xri(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("XRI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("XRI #$%02x", rb[pc+1]), 2
 }
 
 func rp(rb []byte, pc int64) (string, int64) {
@@ -597,7 +589,7 @@ func rp(rb []byte, pc int64) (string, int64) {
 }
 
 func jp(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JP $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JP $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func di(rb []byte, pc int64) (string, int64) {
@@ -605,11 +597,11 @@ func di(rb []byte, pc int64) (string, int64) {
 }
 
 func cp(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CP $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CP $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func ori(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("ORI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("ORI #$%02x", rb[pc+1]), 2
 }
 
 func rm(rb []byte, pc int64) (string, int64) {
@@ -621,7 +613,7 @@ func sphl(rb []byte, pc int64) (string, int64) {
 }
 
 func jm(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("JM $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("JM $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func ei(rb []byte, pc int64) (string, int64) {
@@ -629,9 +621,9 @@ func ei(rb []byte, pc int64) (string, int64) {
 }
 
 func cm(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CM $%02X%02X", rb[pc+2], rb[pc+1]), 3
+	return fmt.Sprintf("CM $%02x%02x", rb[pc+2], rb[pc+1]), 3
 }
 
 func cpi(rb []byte, pc int64) (string, int64) {
-	return fmt.Sprintf("CPI #$%02X", rb[pc+1]), 2
+	return fmt.Sprintf("CPI #$%02x", rb[pc+1]), 2
 }

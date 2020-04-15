@@ -33,3 +33,27 @@ func (i *Intel8080) movRR(dst, src *byte) opHandler {
 		return defaultInstructionLen
 	}
 }
+
+// mvi is the "Move Immediate Data" handler.
+//
+// The byte of immediate data is stored in the specified register.
+func (i *Intel8080) mvi(dst *byte) opHandler {
+	return func() uint16 {
+		*dst = i.mem.Read(i.pc + 1)
+		return 2
+	}
+}
+
+// mvi is the "Move Immediate Data Memory" handler.
+//
+// The byte of immediate data is stored in the register specified by the byte
+// pointed by the HL register pair.
+func (i *Intel8080) mviM() uint16 {
+	// Determine the address of the byte pointed by the HL register pair.
+	// The address is two bytes long, so merge the two bytes stored in each
+	// side of the register pair.
+	addr := uint16(i.h)<<8 | uint16(i.l)
+
+	i.mem.Write(addr, i.mem.Read(i.pc+1))
+	return 2
+}
