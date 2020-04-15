@@ -138,7 +138,48 @@ func (i *Intel8080) accumulatorAdd(n byte) {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = uint16(i.a&0x0f)+(ans&0x0f) > 0x0f
+	i.cc.ac = ans > 0x0f
+
+	// Set the parity bit.
+	i.cc.setParity(uint8(ans))
+
+	// Finally update the accumulator.
+	i.a = uint8(ans)
+}
+
+// accumulatorSub subtracts the given byte n from the accumulator and sets the
+// relevant condition bits.
+func (i *Intel8080) accumulatorSub(n byte) {
+	// Perform the arithmetic at higher precision in order to capture the
+	// carry out.
+	ans := uint16(i.a) - uint16(n)
+
+	// Set the zero condition bit accordingly based on if the result of the
+	// arithmetic was zero.
+	//
+	// Determine the result being zero with a bitwise AND operation against
+	// 0xff (11111111 in base 2 and 255 in base 10).
+	//
+	// 00000000 & 11111111 = 0
+	i.cc.z = ans&0xff == 0
+
+	// Set the sign condition bit accordingly based on if the most
+	// significant bit on the result of the arithmetic was set.
+	//
+	// Determine the result being zero with a bitwise AND operation against
+	// 0x80 (10000000 in base 2 and 128 in base 10).
+	//
+	// 10000000 & 10000000 = 1
+	i.cc.s = ans&0x80 == 1
+
+	// Set the carry condition bit accordingly if the result of the
+	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
+	// 10).
+	i.cc.cy = ans < uint16(n)
+
+	// Set the auxiliary carry condition bit accordingly if the result of
+	// the arithmetic has a carry on the third bit.
+	i.cc.ac = ans > 0x0f
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
