@@ -23,8 +23,8 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Run the emulator in debug mode")
 	flag.Parse()
 
-	// Instantiate 16K of memory.
-	mem := make(memory.Basic, 16384)
+	// Instantiate 64K of memory.
+	mem := make(memory.Basic, 65536)
 	if err := mem.LoadROM(dir); err != nil {
 		log.Fatal(err)
 	}

@@ -89,3 +89,28 @@ func (i *Intel8080) movRM(r byte) opHandler {
 		return defaultInstructionLen
 	}
 }
+
+// sta is the "Store Accumulator Direct" handler.
+//
+// The contents of the accumulator replace the byte at the memory address formed
+// by concatenating HI ADD with LOW ADD.
+func (i *Intel8080) sta() uint16 {
+	i.mem.Write(i.twoByteRead(), i.a)
+	return 3
+}
+
+// movRR is the "Move Memory to Register" handler.
+//
+// One byte of data is moved from the memory address pointed by the HL register
+// pair, to the given register r.
+func (i *Intel8080) movMR(r *byte) opHandler {
+	return func() uint16 {
+		// Determine the address of the byte pointed by the HL register pair.
+		// The address is two bytes long, so merge the two bytes stored in each
+		// side of the register pair.
+		addr := uint16(i.h)<<8 | uint16(i.l)
+
+		*r = i.mem.Read(addr)
+		return defaultInstructionLen
+	}
+}
