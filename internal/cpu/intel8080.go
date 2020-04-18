@@ -193,3 +193,10 @@ func (i *Intel8080) stackAdd(n uint16) {
 	i.mem.Write(i.sp, uint8(n&0xff))
 	i.mem.Write(i.sp+1, uint8(n>>8))
 }
+
+func (i *Intel8080) stackPop() uint16 {
+	n := uint16(i.mem.Read(i.sp)) | uint16(i.mem.Read(i.sp+1))<<8
+	i.sp += 2
+
+	return n
+}

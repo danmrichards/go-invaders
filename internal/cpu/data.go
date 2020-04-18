@@ -57,3 +57,35 @@ func (i *Intel8080) mviM() uint16 {
 	i.mem.Write(addr, i.mem.Read(i.pc+1))
 	return 2
 }
+
+// ldax is the "Load Accumulator" handler.
+//
+// The contents of the memory location addressed by registers B and C, or by
+// registers D and E, replace the contents of the accumulator.
+func (i *Intel8080) ldax(x, y byte) opHandler {
+	return func() uint16 {
+		// Determine the address of the byte pointed by the given register pair.
+		// The address is two bytes long, so merge the two bytes stored in each
+		// side of the register pair.
+		addr := uint16(x)<<8 | uint16(y)
+
+		i.a = i.mem.Read(addr)
+		return defaultInstructionLen
+	}
+}
+
+// movRR is the "Move Register to Memory" handler.
+//
+// One byte of data is moved from the register specified by r (the source
+// register) to the memory address pointed by the HL register pair.
+func (i *Intel8080) movRM(r byte) opHandler {
+	return func() uint16 {
+		// Determine the address of the byte pointed by the HL register pair.
+		// The address is two bytes long, so merge the two bytes stored in each
+		// side of the register pair.
+		addr := uint16(i.h)<<8 | uint16(i.l)
+
+		i.mem.Write(addr, r)
+		return defaultInstructionLen
+	}
+}
