@@ -13,3 +13,10 @@ func (i *Intel8080) di() uint16 {
 
 	return defaultInstructionLen
 }
+
+// hlt is the "Halt" handler.
+func (i *Intel8080) hlt() uint16 {
+	i.halted = true
+
+	return defaultInstructionLen
+}

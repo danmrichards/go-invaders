@@ -34,6 +34,9 @@ type Intel8080 struct {
 	// Interrupts enabled.
 	ie bool
 
+	// Has the CPU been halted?
+	halted bool
+
 	// Provides an interface to enable reads and writes to memory.
 	mem memory.ReadWriteDumper
 
