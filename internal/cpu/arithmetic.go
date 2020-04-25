@@ -324,18 +324,6 @@ func (i *Intel8080) daa() uint16 {
 	return defaultInstructionLen
 }
 
-// cma is the "Compliment Accumulator" handler.
-//
-// Each bit of the contents of the accumulator is complemented (producing the
-// one's complement).
-//
-// E.g. 01010001 -> 10101110
-func (i *Intel8080) cma() uint16 {
-	i.a = ^i.a
-
-	return defaultInstructionLen
-}
-
 // adc is the "Add Register to Accumulator With Carry" handler.
 //
 // The specified byte plus the content of the Carry bit is added to the contents

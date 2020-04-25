@@ -114,3 +114,12 @@ func (i *Intel8080) movMR(r *byte) opHandler {
 		return defaultInstructionLen
 	}
 }
+
+// lda is the "Load Accumulator Direct" handler.
+//
+// The byte at the memory address formed by concatenating HI ADD with LOW ADD
+// replaces the contents of the accumulator.
+func (i *Intel8080) lda() uint16 {
+	i.a = i.mem.Read(i.twoByteRead())
+	return 2
+}

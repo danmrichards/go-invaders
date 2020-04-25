@@ -31,8 +31,8 @@ type Intel8080 struct {
 	// Conditions represents the condition bits of the CPU.
 	cc *conditions
 
-	// Interrupts enabled (1 = enabled, 0 = disabled).
-	ie byte
+	// Interrupts enabled.
+	ie bool
 
 	// Provides an interface to enable reads and writes to memory.
 	mem memory.ReadWriteDumper
