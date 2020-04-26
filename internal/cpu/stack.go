@@ -78,3 +78,38 @@ func (i *Intel8080) pushPSW() uint16 {
 	i.sp -= 2
 	return defaultInstructionLen
 }
+
+// xthl is the "Exchange Stack" handler.
+//
+// The contents of the L register are exchanged with the contents of the memory
+// byte whose address is held in the stack pointer SP. The contents of the H
+// register are exchanged with the contents of the memory byte whose address is
+// one greater than that held in the stack pointer.
+func (i *Intel8080) xthl() uint16 {
+	b := uint16(i.mem.Read(i.sp+1))<<8 | uint16(i.mem.Read(i.sp))
+	i.sp += 2
+
+	hl := uint16(i.h)<<8 | uint16(i.l)
+
+	i.h = uint8(b >> 8)
+	i.l = uint8(b)
+
+	i.push(byte(hl&0xff), byte(hl>>8))
+
+	return defaultInstructionLen
+}
+
+// sphl is the "Load SP from H and L" handler.
+//
+// The 16 bits of data held in the H and L registers replace the contents of the
+// stack pointer SP. The contents of the H and L registers are unchanged.
+func (i *Intel8080) sphl() uint16 {
+	// Determine the address of the byte pointed by the HL register pair.
+	// The address is two bytes long, so merge the two bytes stored in each
+	// side of the register pair.
+	addr := uint16(i.h)<<8 | uint16(i.l)
+
+	i.sp = addr
+
+	return defaultInstructionLen
+}

@@ -255,3 +255,80 @@ func (i *Intel8080) cmpM() uint16 {
 
 	return defaultInstructionLen
 }
+
+// rlc is the "Rotate Accumulator Left" handler.
+//
+// The Carry bit is set equal to the high-order bit of the accumulator. The
+// contents of the accumulator are rotated one bit position to the left, with
+// the high-order bit being transferred to the low-order bit position of the
+// accumulator.
+func (i *Intel8080) rlc() uint16 {
+	i.cc.cy = (i.a & (1 << 7)) != 0
+
+	var c byte
+	if i.cc.cy {
+		c = 1
+	}
+	i.a = i.a<<1 | c
+
+	return defaultInstructionLen
+}
+
+// ral is the "Rotate Accumulator Left Through Carry" handler.
+//
+// The contents of the accumulator are rotated one bit position to the left.
+//
+// The high-order bit of the accumulator replaces the carry bit, while the carry
+// bit replaces the high-order bit of the accumulator.
+func (i *Intel8080) ral() uint16 {
+	a := i.a
+	cy := (a & 0x80) != 0
+
+	i.a = a << 1
+
+	if i.cc.cy {
+		i.a |= 0x01
+	}
+
+	if cy {
+		i.cc.cy = true
+	} else {
+		i.cc.cy = false
+	}
+
+	return defaultInstructionLen
+}
+
+// xri is the "Exclusive-Or Immediate With Accumulator" handler.
+//
+// The byte of immediate data is EXCLUSIVE-ORed with the contents of the
+// accumulator. The carry bit is set to zero.
+func (i *Intel8080) xri() uint16 {
+	n := i.mem.Read(i.pc+1) ^ i.a
+
+	i.cc.z = n == 0
+	i.cc.s = n&0x80 == 0x80
+	i.cc.setParity(n)
+	i.cc.ac = false
+	i.cc.cy = false
+
+	i.a = n
+	return 2
+}
+
+// ori is the "Logical OR Immediate Register With Accumulator" handler.
+//
+// The byte of immediate data is logically ORed bit by bit with the contents of
+// the accumulator. The Carry bit is reset to zero.
+func (i *Intel8080) ori() uint16 {
+	n := i.mem.Read(i.pc+1) | i.a
+
+	i.cc.z = n == 0
+	i.cc.s = n&0x80 == 0x80
+	i.cc.setParity(n)
+	i.cc.ac = false
+	i.cc.cy = false
+
+	i.a = n
+	return 2
+}
