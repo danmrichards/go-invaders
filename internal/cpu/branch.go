@@ -17,11 +17,15 @@ func (i *Intel8080) jmp() uint16 {
 //
 // A call operation is unconditionally performed to subroutine sub.
 func (i *Intel8080) call() uint16 {
-	i.stackAdd(i.pc + 2)
+	// We will dump the program to the subroutine indicated by the two immediate
+	// bytes in memory.
+	addr := i.twoByteRead()
 
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
+	// Update the stack pointer. Note we're incrementing by 3 to account for
+	// this operation and the two bytes we've read.
+	i.stackAdd(i.pc + 3)
+
+	i.pc = addr
 
 	// As we're unconditionally setting the program counter above, there is no
 	// need to increment the program counter once this method returns.
@@ -42,8 +46,8 @@ func (i *Intel8080) ret() uint16 {
 //
 // If the zero bit is one, program execution continues at the memory address adr.
 func (i *Intel8080) jnz() uint16 {
-	// Return early if the zero bit isn't set.
-	if !i.cc.z {
+	// Return early if the zero bit is set.
+	if i.cc.z {
 		return defaultInstructionLen
 	}
 
@@ -61,8 +65,8 @@ func (i *Intel8080) jnz() uint16 {
 // If the zero bit is not one, program execution continues at the memory address
 // adr.
 func (i *Intel8080) jz() uint16 {
-	// Return early if the zero bit is set.
-	if i.cc.z {
+	// Return early if the zero bit is not set.
+	if !i.cc.z {
 		return defaultInstructionLen
 	}
 

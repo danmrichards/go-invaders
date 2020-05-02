@@ -88,3 +88,4 @@ $RECYCLE.BIN/
 .idea
 roms
 bin
+internal/cpu/testdata/*

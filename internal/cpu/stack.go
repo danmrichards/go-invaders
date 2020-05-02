@@ -6,9 +6,10 @@ package cpu
 // memory indicated by the stack pointer SP.
 func (i *Intel8080) pop(x, y *byte) opHandler {
 	return func() uint16 {
-		*x = i.mem.Read(i.sp)
-		*y = i.mem.Read(i.sp + 1)
-		i.sp += 2
+		n := i.stackPop()
+
+		*x = uint8(n >> 8)
+		*y = uint8(n & 0x00ff)
 
 		return defaultInstructionLen
 	}

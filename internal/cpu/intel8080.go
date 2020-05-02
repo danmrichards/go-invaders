@@ -79,6 +79,10 @@ func (i *Intel8080) Step() error {
 	// the attached memory.
 	opc := i.mem.Read(i.pc)
 
+	// TODO(dr): Refactor memory reading to update the program counter. This
+	//  will have a knock on effect on all handlers. Will need to adjust the
+	//  handler return values.
+
 	// Dump the assembly code if debug mode is on.
 	if i.debug {
 		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc))
@@ -192,7 +196,7 @@ func (i *Intel8080) accumulatorSub(n byte) {
 }
 
 func (i *Intel8080) stackAdd(n uint16) {
-	i.sp = i.sp - 2
+	i.sp -= 2
 	i.mem.Write(i.sp, uint8(n&0xff))
 	i.mem.Write(i.sp+1, uint8(n>>8))
 }
