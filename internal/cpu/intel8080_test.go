@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/danmrichards/go-invaders/internal/memory"
 )
@@ -80,6 +79,6 @@ func TestCPU(t *testing.T) {
 			break
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 	}
 }

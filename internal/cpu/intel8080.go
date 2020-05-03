@@ -77,16 +77,24 @@ func NewIntel8080(mem memory.ReadWriteDumper, opts ...Option) *Intel8080 {
 func (i *Intel8080) Step() error {
 	// Use the current value of the program counter to get the next opcode from
 	// the attached memory.
-	opc := i.mem.Read(i.pc)
-
-	// TODO(dr): Refactor memory reading to update the program counter. This
-	//  will have a knock on effect on all handlers. Will need to adjust the
-	//  handler return values.
+	opc := i.immediateByte()
 
 	// Dump the assembly code if debug mode is on.
 	if i.debug {
-		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc))
-		fmt.Println(asm)
+		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc-1))
+
+		fmt.Printf(
+			"%s\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
+			asm,
+			i.sp,
+			i.a,
+			i.b,
+			i.c,
+			i.d,
+			i.e,
+			i.h,
+			i.l,
+		)
 	}
 
 	// Lookup the opcode handler.
@@ -96,21 +104,30 @@ func (i *Intel8080) Step() error {
 			"unsupported opcode 0x%02x at program counter %04x", opc, i.pc,
 		)
 	}
-
-	// Handle the opcode and increment the program counter by the instruction
-	// length.
-	//
-	// Imagine that we start at pc = 0, the first operation is 2 bytes long so
-	// we increment the pc to 3 before continuing.
-	i.pc += h()
+	h()
 
 	return nil
 }
 
-// twoByteRead returns the next two bytes from memory (most significant first)
-// merged together to form a single memory address.
-func (i *Intel8080) twoByteRead() uint16 {
-	return uint16(i.mem.Read(i.pc+2))<<8 | uint16(i.mem.Read(i.pc+1))
+// immediateByte returns the next byte from memory indicated by the program
+// counter.
+//
+// The program counter is incremented by one after the read.
+func (i *Intel8080) immediateByte() uint8 {
+	b := i.mem.Read(i.pc)
+	i.pc++
+
+	return b
+}
+
+// immediateWord returns the next two bytes from memory, merged, as a single word.
+//
+// The program counter is incremented by two after the read.
+func (i *Intel8080) immediateWord() uint16 {
+	w := uint16(i.mem.Read(i.pc)) | uint16(i.mem.Read(i.pc+1))<<8
+	i.pc += 2
+
+	return w
 }
 
 // accumulatorAdd adds the given byte n to the accumulator and sets the relevant

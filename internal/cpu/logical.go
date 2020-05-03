@@ -1,23 +1,23 @@
 package cpu
 
+// TODO: One of these could have a bug; not setting carry flag properly.
+
 // cma is the "Compliment Accumulator" handler.
 //
 // Each bit of the contents of the accumulator is complemented (producing the
 // one's complement).
 //
 // E.g. 01010001 -> 10101110
-func (i *Intel8080) cma() uint16 {
+func (i *Intel8080) cma() {
 	i.a = ^i.a
-
-	return defaultInstructionLen
 }
 
 // ani is the "And Immediate With Accumulator" handler.
 //
 // The byte of immediate data is logically ANDed with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) ani() uint16 {
-	n := i.a & i.mem.Read(i.pc+1)
+func (i *Intel8080) ani() {
+	n := i.a & i.immediateByte()
 
 	// Set the condition bits accordingly.
 	i.cc.z = n == 0
@@ -26,7 +26,6 @@ func (i *Intel8080) ani() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return 2
 }
 
 // rrc is the "Rotate Accumulator Right" handler.
@@ -35,13 +34,11 @@ func (i *Intel8080) ani() uint16 {
 // contents of the accumulator are rotated one bit position to the right, with
 // the low-order bit being transferred to the high-order bit position of the
 // accumulator.
-func (i *Intel8080) rrc() uint16 {
+func (i *Intel8080) rrc() {
 	n := i.a
 
 	i.a = (n & 1 << 7) | (n >> 1)
 	i.cc.cy = n&1 == 1
-
-	return defaultInstructionLen
 }
 
 // rar is the "Rotate Accumulator Right Through Carry" handler.
@@ -50,7 +47,7 @@ func (i *Intel8080) rrc() uint16 {
 //
 // The low-order bit of the accumulator replaces the carry bit, while the carry
 // bit replaces the high-order bit of the accumulator.
-func (i *Intel8080) rar() uint16 {
+func (i *Intel8080) rar() {
 	n := i.a
 
 	var c byte
@@ -59,13 +56,11 @@ func (i *Intel8080) rar() uint16 {
 	}
 	i.a = (c << 7) | (n >> 1)
 	i.cc.cy = n&1 == 1
-
-	return defaultInstructionLen
 }
 
 // cpi is the "Compare Immediate With Accumulator" handler.
-func (i *Intel8080) cpi() uint16 {
-	b := i.mem.Read(i.pc + 1)
+func (i *Intel8080) cpi() {
+	b := i.immediateByte()
 	n := i.a - b
 
 	// Set the condition bits.
@@ -74,17 +69,15 @@ func (i *Intel8080) cpi() uint16 {
 	i.cc.setParity(n)
 	i.cc.ac = false
 	i.cc.cy = i.a < b
-
-	return 2
 }
 
 // xra is the "Logical Exclusive-Or Register With Accumulator" handler.
 //
 // The specified byte is EXCLUSIVE-ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) xra(b byte) opHandler {
-	return func() uint16 {
-		n := b ^ i.a
+func (i *Intel8080) xra(b *byte) opHandler {
+	return func() {
+		n := *b ^ i.a
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
@@ -93,7 +86,6 @@ func (i *Intel8080) xra(b byte) opHandler {
 		i.cc.cy = false
 
 		i.a = n
-		return defaultInstructionLen
 	}
 }
 
@@ -101,7 +93,7 @@ func (i *Intel8080) xra(b byte) opHandler {
 //
 // The specified byte is EXCLUSIVE-ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) xraM() uint16 {
+func (i *Intel8080) xraM() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
@@ -116,16 +108,15 @@ func (i *Intel8080) xraM() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return defaultInstructionLen
 }
 
 // ana is the "Logical AND Register With Accumulator" handler.
 //
 // The specified byte is logically ANDed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) ana(b byte) opHandler {
-	return func() uint16 {
-		n := b & i.a
+func (i *Intel8080) ana(b *byte) opHandler {
+	return func() {
+		n := *b & i.a
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
@@ -134,7 +125,6 @@ func (i *Intel8080) ana(b byte) opHandler {
 		i.cc.cy = false
 
 		i.a = n
-		return defaultInstructionLen
 	}
 }
 
@@ -142,7 +132,7 @@ func (i *Intel8080) ana(b byte) opHandler {
 //
 // The specified byte is logically ANDed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) anaM() uint16 {
+func (i *Intel8080) anaM() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
@@ -157,16 +147,15 @@ func (i *Intel8080) anaM() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return defaultInstructionLen
 }
 
 // ora is the "Logical OR Register With Accumulator" handler.
 //
 // The specified byte is logically ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) ora(b byte) opHandler {
-	return func() uint16 {
-		n := b | i.a
+func (i *Intel8080) ora(b *byte) opHandler {
+	return func() {
+		n := *b | i.a
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
@@ -175,7 +164,6 @@ func (i *Intel8080) ora(b byte) opHandler {
 		i.cc.cy = false
 
 		i.a = n
-		return defaultInstructionLen
 	}
 }
 
@@ -183,7 +171,7 @@ func (i *Intel8080) ora(b byte) opHandler {
 //
 // The specified byte is logically ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) oraM() uint16 {
+func (i *Intel8080) oraM() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
@@ -198,7 +186,6 @@ func (i *Intel8080) oraM() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return defaultInstructionLen
 }
 
 // cmp is the "Compare Register With Accumulator" handler.
@@ -212,18 +199,16 @@ func (i *Intel8080) oraM() uint16 {
 // they are unequal. Since a subtract operation is performed, the Carry bit will
 // be set if there is no carry out of bit 7, indicating that the contents of REG
 // are greater than the contents of the accumulator, and reset otherwise.
-func (i *Intel8080) cmp(b byte) opHandler {
-	return func() uint16 {
-		n := i.a - b
+func (i *Intel8080) cmp(b *byte) opHandler {
+	return func() {
+		n := i.a - *b
 
 		// Set the condition bits.
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
 		i.cc.setParity(n)
 		i.cc.ac = false
-		i.cc.cy = i.a < b
-
-		return defaultInstructionLen
+		i.cc.cy = i.a < *b
 	}
 }
 
@@ -238,7 +223,7 @@ func (i *Intel8080) cmp(b byte) opHandler {
 // they are unequal. Since a subtract operation is performed, the Carry bit will
 // be set if there is no carry out of bit 7, indicating that the contents of REG
 // are greater than the contents of the accumulator, and reset otherwise.
-func (i *Intel8080) cmpM() uint16 {
+func (i *Intel8080) cmpM() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
@@ -252,8 +237,6 @@ func (i *Intel8080) cmpM() uint16 {
 	i.cc.setParity(n)
 	i.cc.ac = false
 	i.cc.cy = i.a < n
-
-	return defaultInstructionLen
 }
 
 // rlc is the "Rotate Accumulator Left" handler.
@@ -262,7 +245,7 @@ func (i *Intel8080) cmpM() uint16 {
 // contents of the accumulator are rotated one bit position to the left, with
 // the high-order bit being transferred to the low-order bit position of the
 // accumulator.
-func (i *Intel8080) rlc() uint16 {
+func (i *Intel8080) rlc() {
 	i.cc.cy = (i.a & (1 << 7)) != 0
 
 	var c byte
@@ -270,8 +253,6 @@ func (i *Intel8080) rlc() uint16 {
 		c = 1
 	}
 	i.a = i.a<<1 | c
-
-	return defaultInstructionLen
 }
 
 // ral is the "Rotate Accumulator Left Through Carry" handler.
@@ -280,7 +261,7 @@ func (i *Intel8080) rlc() uint16 {
 //
 // The high-order bit of the accumulator replaces the carry bit, while the carry
 // bit replaces the high-order bit of the accumulator.
-func (i *Intel8080) ral() uint16 {
+func (i *Intel8080) ral() {
 	a := i.a
 	cy := (a & 0x80) != 0
 
@@ -295,16 +276,14 @@ func (i *Intel8080) ral() uint16 {
 	} else {
 		i.cc.cy = false
 	}
-
-	return defaultInstructionLen
 }
 
 // xri is the "Exclusive-Or Immediate With Accumulator" handler.
 //
 // The byte of immediate data is EXCLUSIVE-ORed with the contents of the
 // accumulator. The carry bit is set to zero.
-func (i *Intel8080) xri() uint16 {
-	n := i.mem.Read(i.pc+1) ^ i.a
+func (i *Intel8080) xri() {
+	n := i.immediateByte() ^ i.a
 
 	i.cc.z = n == 0
 	i.cc.s = n&0x80 == 0x80
@@ -313,15 +292,14 @@ func (i *Intel8080) xri() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return 2
 }
 
 // ori is the "Logical OR Immediate Register With Accumulator" handler.
 //
 // The byte of immediate data is logically ORed bit by bit with the contents of
 // the accumulator. The Carry bit is reset to zero.
-func (i *Intel8080) ori() uint16 {
-	n := i.mem.Read(i.pc+1) | i.a
+func (i *Intel8080) ori() {
+	n := i.immediateByte() | i.a
 
 	i.cc.z = n == 0
 	i.cc.s = n&0x80 == 0x80
@@ -330,5 +308,4 @@ func (i *Intel8080) ori() uint16 {
 	i.cc.cy = false
 
 	i.a = n
-	return 2
 }

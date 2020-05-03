@@ -3,482 +3,265 @@ package cpu
 // jmp is the "Jump" handler.
 //
 // This handler jumps the program counter to a given point in memory.
-func (i *Intel8080) jmp() uint16 {
+func (i *Intel8080) jmp() {
 	// The address to jump to is two bytes long, so get the next two bytes from
 	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
+	i.pc = i.immediateWord()
 }
 
 // call is the "Call subroutine" handler.
 //
 // A call operation is unconditionally performed to subroutine sub.
-func (i *Intel8080) call() uint16 {
+func (i *Intel8080) call() {
 	// We will dump the program to the subroutine indicated by the two immediate
 	// bytes in memory.
-	addr := i.twoByteRead()
+	addr := i.immediateWord()
 
 	// Update the stack pointer. Note we're incrementing by 3 to account for
 	// this operation and the two bytes we've read.
-	i.stackAdd(i.pc + 3)
+	i.stackAdd(i.pc)
 
 	i.pc = addr
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // ret is the "Return" handler.
 //
 // A return operation is unconditionally performed.
-func (i *Intel8080) ret() uint16 {
+func (i *Intel8080) ret() {
 	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // jnz is the "Jump If Not Zero" handler.
 //
 // If the zero bit is one, program execution continues at the memory address adr.
-func (i *Intel8080) jnz() uint16 {
-	// Return early if the zero bit is set.
-	if i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) jnz() {
+	if !i.cc.z {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jz is the "Jump Zero" handler.
 //
 // If the zero bit is not one, program execution continues at the memory address
 // adr.
-func (i *Intel8080) jz() uint16 {
-	// Return early if the zero bit is not set.
-	if !i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) jz() {
+	if i.cc.z {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jnc is the "Jump Not Carry" handler.
 //
 // If the carry bit is one, program execution continues at the memory address
 // adr.
-func (i *Intel8080) jnc() uint16 {
-	// Return early if the carry bit is set.
-	if i.cc.cy {
-		return defaultInstructionLen
+func (i *Intel8080) jnc() {
+	if !i.cc.cy {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jc is the "Jump Carry" handler.
 //
 // If the carry bit is not one, program execution continues at the memory
 // address adr.
-func (i *Intel8080) jc() uint16 {
+func (i *Intel8080) jc() {
 	// Return early if the carry bit isn't set.
-	if !i.cc.cy {
-		return defaultInstructionLen
+	if i.cc.cy {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jpo is the "Jump If Parity Odd" handler.
 //
 // If the Parity bit is zero (indicating a result with odd parity), program
 // execution continues at the memory address adr.
-func (i *Intel8080) jpo() uint16 {
-	// Return early if the parity bit is set.
-	if i.cc.p {
-		return defaultInstructionLen
+func (i *Intel8080) jpo() {
+	if !i.cc.p {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jpe is the "Jump If Parity Even" handler.
 //
 // If the Parity bit is one (indicating a result with even parity), program
 // execution continues at the memory address adr.
-func (i *Intel8080) jpe() uint16 {
+func (i *Intel8080) jpe() {
 	// Return early if the parity bit isn't set.
-	if !i.cc.p {
-		return defaultInstructionLen
+	if i.cc.p {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jp is the "Jump If Positive" handler.
 //
 // If the Sign bit is zero (indicating a positive result), program execution
 // continues at the memory address adr.
-func (i *Intel8080) jp() uint16 {
-	// Return early if the parity bit is set.
-	if i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) jp() {
+	if !i.cc.s {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // jm is the "Jump If Minus" handler.
 //
 // If the Sign bit is one (indicating a positive result), program execution
 // continues at the memory address adr.
-func (i *Intel8080) jm() uint16 {
-	// Return early if the parity bit is set.
-	if !i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) jm() {
+	if i.cc.s {
+		i.jmp()
 	}
-
-	// The address to jump to is two bytes long, so get the next two bytes from
-	// memory (most significant first) and merge them.
-	i.pc = i.twoByteRead()
-
-	// As we're jumping the program counter there is no need to increment the
-	// program counter once this method returns.
-	return 0
 }
 
 // cz is the "Call If Zero" handler.
 //
 // If the Zero bit is zero, a call operation is performed to subroutine sub.
-func (i *Intel8080) cz() uint16 {
-	// Return early if the zero bit isn't set.
-	if !i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) cz() {
+	if i.cc.z {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cnz is the "Call If Not Zero" handler.
 //
 // If the Zero bit is one, a call operation is performed to subroutine sub.
-func (i *Intel8080) cnz() uint16 {
-	// Return early if the zero bit is set.
-	if i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) cnz() {
+	if !i.cc.z {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cc is the "Call If Carry" handler.
 //
 // If the Carry bit is zero, a call operation is performed to subroutine sub.
-func (i *Intel8080) cic() uint16 {
-	// Return early if the carry bit isn't set.
-	if !i.cc.cy {
-		return defaultInstructionLen
+func (i *Intel8080) cic() {
+	if i.cc.cy {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cnc is the "Call If Not carry" handler.
 //
 // If the carry bit is one, a call operation is performed to subroutine sub.
-func (i *Intel8080) cnc() uint16 {
-	// Return early if the carry bit is set.
-	if i.cc.cy {
-		return defaultInstructionLen
+func (i *Intel8080) cnc() {
+	if !i.cc.cy {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cpo is the "Call If Parity Odd" handler.
 //
 // If the Parity bit is one (indicating a result with even parity), a call
 // operation is performed to subroutine sub.
-func (i *Intel8080) cpo() uint16 {
-	// Return early if the parity bit isn't set.
-	if !i.cc.p {
-		return defaultInstructionLen
+func (i *Intel8080) cpo() {
+	if i.cc.p {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cpe is the "Call If Parity Even" handler.
 //
 // If the Parity bit is even (indicating a result with even parity), a call
 // operation is performed to subroutine sub.
-func (i *Intel8080) cpe() uint16 {
-	// Return early if the parity bit is set.
-	if i.cc.p {
-		return defaultInstructionLen
+func (i *Intel8080) cpe() {
+	if !i.cc.p {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cp is the "Call If Positive" handler.
 //
 // If the Sign bit is zero (indicating a positive result), a call operation is
 // performed to subroutine sub.
-func (i *Intel8080) cp() uint16 {
-	// Return early if the sign bit isn't set.
-	if i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) cp() {
+	if !i.cc.s {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // cp is the "Call If Minus" handler.
 //
 // If the Sign bit is one (indicating a positive result), a call operation is
 // performed to subroutine sub.
-func (i *Intel8080) cm() uint16 {
-	// Return early if the sign bit is set.
-	if !i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) cm() {
+	if i.cc.s {
+		i.call()
 	}
-
-	i.stackAdd(i.pc + 2)
-
-	// Jump the program to the subroutine indicated by the two immediate bytes
-	// in memory.
-	i.pc = i.twoByteRead()
-
-	// As we're unconditionally setting the program counter above, there is no
-	// need to increment the program counter once this method returns.
-	return 0
 }
 
 // rnz is the "Return If Not Zero" handler.
 //
 // If the Zero bit is zero, a return operation is performed.
-func (i *Intel8080) rnz() uint16 {
-	// Return early if the zero bit is set.
-	if i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) rnz() {
+	if !i.cc.z {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rz is the "Return If Zero" handler.
 //
 // If the Zero bit is one, a return operation is performed.
-func (i *Intel8080) rz() uint16 {
-	// Return early if the zero bit is set.
-	if !i.cc.z {
-		return defaultInstructionLen
+func (i *Intel8080) rz() {
+	if i.cc.z {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rnc is the "Return If Not Carry" handler.
 //
 // If the Carry bit is zero, a return operation is performed.
-func (i *Intel8080) rnc() uint16 {
-	// Return early if the carry bit is set.
-	if i.cc.cy {
-		return defaultInstructionLen
+func (i *Intel8080) rnc() {
+	if !i.cc.cy {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rc is the "Return If Carry" handler.
 //
 // If the Carry bit is one, a return operation is performed.
-func (i *Intel8080) rc() uint16 {
-	// Return early if the carry bit is set.
-	if !i.cc.cy {
-		return defaultInstructionLen
+func (i *Intel8080) rc() {
+	if i.cc.cy {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rpo is the "Return If Parity Odd" handler.
 //
 // If the Parity bit is zero (indicating a result with odd parity), a return
 // operation is performed.
-func (i *Intel8080) rpo() uint16 {
-	// Return early if the parity bit is set.
-	if i.cc.p {
-		return defaultInstructionLen
+func (i *Intel8080) rpo() {
+	if !i.cc.p {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rpe is the "Return If Parity Even" handler.
 //
 // If the Parity bit is one (indicating a result with event parity), a return
 // operation is performed.
-func (i *Intel8080) rpe() uint16 {
-	// Return early if the parity bit isn't set.
-	if !i.cc.p {
-		return defaultInstructionLen
+func (i *Intel8080) rpe() {
+	if i.cc.p {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rp is the "Return If Positive" handler.
 //
 // If the Sign bit is zero (indicating a positive result), a return operation
 // is performed.
-func (i *Intel8080) rp() uint16 {
-	// Return early if the sign bit is set.
-	if i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) rp() {
+	if !i.cc.s {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rm is the "Return If Minus" handler.
 //
 // If the Sign bit is one (indicating a negative result), a return operation
 // is performed.
-func (i *Intel8080) rm() uint16 {
-	// Return early if the sign bit isn't set.
-	if !i.cc.s {
-		return defaultInstructionLen
+func (i *Intel8080) rm() {
+	if i.cc.s {
+		i.ret()
 	}
-
-	i.pc = i.stackPop()
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // pchl is the "Load Program Counter" handler.
@@ -489,16 +272,13 @@ func (i *Intel8080) rm() uint16 {
 //
 // This causes program execution to continue at the address contained in the H
 // and L registers.
-func (i *Intel8080) pchl() uint16 {
+func (i *Intel8080) pchl() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
 
 	i.pc = addr
-
-	// Returning zero as we've manually set the program counter.
-	return 0
 }
 
 // rst is the "Restart" handler.
@@ -508,12 +288,9 @@ func (i *Intel8080) pchl() uint16 {
 //
 // The program execution continues at an address indicated by opc.
 func (i *Intel8080) rst(opc byte) opHandler {
-	return func() uint16 {
+	return func() {
 		i.stackAdd(i.pc)
 
 		i.pc = uint16(opc) & 0x38
-
-		// Returning zero as we've manually set the program counter.
-		return 0
 	}
 }
