@@ -36,7 +36,7 @@ func newConditions() *conditions {
 		z:  true,
 		s:  true,
 		p:  true,
-		cy: true,
+		cy: false,
 		ac: true,
 	}
 }
@@ -54,4 +54,40 @@ func (c *conditions) setParity(b byte) {
 
 	// Set parity based on the number of set bits being even.
 	c.p = n%2 == 0
+}
+
+// status returns a special byte which represents the current status of the
+// conditions.
+//
+// Intended for use with the accumulator to form the "Program Status Word".
+func (c *conditions) status() (s byte) {
+	if c.s {
+		s |= 1 << 7
+	}
+	if c.z {
+		s |= 1 << 6
+	}
+	if c.ac {
+		s |= 1 << 4
+	}
+	if c.p {
+		s |= 1 << 2
+	}
+	s |= 1 << 1
+	if c.cy {
+		s |= 1
+	}
+
+	return s
+}
+
+// setStatus sets the value of the conditions based on the given special byte.
+//
+// Intended for use with the accumulator to form the "Program Status Word".
+func (c *conditions) setStatus(b byte) {
+	c.s = (b >> 7 & 0x01) == 0x01
+	c.z = (b >> 6 & 0x01) == 0x01
+	c.ac = (b >> 4 & 0x01) == 0x01
+	c.p = (b >> 2 & 0x01) == 0x01
+	c.cy = (b & 0x1) == 0x1
 }

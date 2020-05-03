@@ -68,7 +68,7 @@ func TestCPU(t *testing.T) {
 				}
 			}
 			if i80.c == 0x02 {
-				fmt.Printf("%c", i80.e)
+				//fmt.Printf("%c", i80.e)
 			}
 		}
 
@@ -79,6 +79,6 @@ func TestCPU(t *testing.T) {
 			break
 		}
 
-		//time.Sleep(100 * time.Millisecond)
+		//time.Sleep(50 * time.Millisecond)
 	}
 }

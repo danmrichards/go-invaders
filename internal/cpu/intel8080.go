@@ -84,8 +84,10 @@ func (i *Intel8080) Step() error {
 		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc-1))
 
 		fmt.Printf(
-			"%s\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
+			"%s\tCY=%v\tZ=%v\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
 			asm,
+			i.cc.cy,
+			i.cc.z,
 			i.sp,
 			i.a,
 			i.b,
@@ -212,12 +214,15 @@ func (i *Intel8080) accumulatorSub(n byte) {
 	i.a = uint8(ans)
 }
 
+// stackAdd adds the given word to the stack.
 func (i *Intel8080) stackAdd(n uint16) {
 	i.sp -= 2
 	i.mem.Write(i.sp, uint8(n&0xff))
 	i.mem.Write(i.sp+1, uint8(n>>8))
 }
 
+// stackPop returns the immediate word from the stack as indicated by the stack
+// pointer.
 func (i *Intel8080) stackPop() uint16 {
 	n := uint16(i.mem.Read(i.sp)) | uint16(i.mem.Read(i.sp+1))<<8
 	i.sp += 2

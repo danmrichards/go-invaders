@@ -211,6 +211,7 @@ func (i *Intel8080) rz() {
 // If the Carry bit is zero, a return operation is performed.
 func (i *Intel8080) rnc() {
 	if !i.cc.cy {
+		// TODO: Bug here at PC = 01fe
 		i.ret()
 	}
 }
