@@ -35,8 +35,12 @@ func (i *Intel8080) ret() {
 //
 // If the zero bit is one, program execution continues at the memory address adr.
 func (i *Intel8080) jnz() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.z {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -45,8 +49,12 @@ func (i *Intel8080) jnz() {
 // If the zero bit is not one, program execution continues at the memory address
 // adr.
 func (i *Intel8080) jz() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.z {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -55,8 +63,12 @@ func (i *Intel8080) jz() {
 // If the carry bit is one, program execution continues at the memory address
 // adr.
 func (i *Intel8080) jnc() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.cy {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -65,9 +77,12 @@ func (i *Intel8080) jnc() {
 // If the carry bit is not one, program execution continues at the memory
 // address adr.
 func (i *Intel8080) jc() {
-	// Return early if the carry bit isn't set.
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.cy {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -76,8 +91,12 @@ func (i *Intel8080) jc() {
 // If the Parity bit is zero (indicating a result with odd parity), program
 // execution continues at the memory address adr.
 func (i *Intel8080) jpo() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.p {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -86,9 +105,12 @@ func (i *Intel8080) jpo() {
 // If the Parity bit is one (indicating a result with even parity), program
 // execution continues at the memory address adr.
 func (i *Intel8080) jpe() {
-	// Return early if the parity bit isn't set.
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.p {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -97,8 +119,12 @@ func (i *Intel8080) jpe() {
 // If the Sign bit is zero (indicating a positive result), program execution
 // continues at the memory address adr.
 func (i *Intel8080) jp() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.s {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -107,8 +133,12 @@ func (i *Intel8080) jp() {
 // If the Sign bit is one (indicating a positive result), program execution
 // continues at the memory address adr.
 func (i *Intel8080) jm() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.s {
-		i.jmp()
+		i.pc = addr
 	}
 }
 
@@ -116,8 +146,16 @@ func (i *Intel8080) jm() {
 //
 // If the Zero bit is zero, a call operation is performed to subroutine sub.
 func (i *Intel8080) cz() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.z {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -125,8 +163,16 @@ func (i *Intel8080) cz() {
 //
 // If the Zero bit is one, a call operation is performed to subroutine sub.
 func (i *Intel8080) cnz() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.z {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -134,8 +180,16 @@ func (i *Intel8080) cnz() {
 //
 // If the Carry bit is zero, a call operation is performed to subroutine sub.
 func (i *Intel8080) cic() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.cy {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -143,8 +197,16 @@ func (i *Intel8080) cic() {
 //
 // If the carry bit is one, a call operation is performed to subroutine sub.
 func (i *Intel8080) cnc() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.cy {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -153,8 +215,16 @@ func (i *Intel8080) cnc() {
 // If the Parity bit is one (indicating a result with even parity), a call
 // operation is performed to subroutine sub.
 func (i *Intel8080) cpo() {
-	if i.cc.p {
-		i.call()
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
+	if !i.cc.p {
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -163,8 +233,16 @@ func (i *Intel8080) cpo() {
 // If the Parity bit is even (indicating a result with even parity), a call
 // operation is performed to subroutine sub.
 func (i *Intel8080) cpe() {
-	if !i.cc.p {
-		i.call()
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
+	if i.cc.p {
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -173,8 +251,16 @@ func (i *Intel8080) cpe() {
 // If the Sign bit is zero (indicating a positive result), a call operation is
 // performed to subroutine sub.
 func (i *Intel8080) cp() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if !i.cc.s {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -183,8 +269,16 @@ func (i *Intel8080) cp() {
 // If the Sign bit is one (indicating a positive result), a call operation is
 // performed to subroutine sub.
 func (i *Intel8080) cm() {
+	// The address to jump to is two bytes long, so get the next two bytes from
+	// memory (most significant first) and merge them.
+	addr := i.immediateWord()
+
 	if i.cc.s {
-		i.call()
+		// Update the stack pointer. Note we're incrementing by 3 to account for
+		// this operation and the two bytes we've read.
+		i.stackAdd(i.pc)
+
+		i.pc = addr
 	}
 }
 
@@ -211,7 +305,6 @@ func (i *Intel8080) rz() {
 // If the Carry bit is zero, a return operation is performed.
 func (i *Intel8080) rnc() {
 	if !i.cc.cy {
-		// TODO: Bug here at PC = 01fe
 		i.ret()
 	}
 }

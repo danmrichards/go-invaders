@@ -7,10 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/danmrichards/go-invaders/internal/memory"
-
 	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/danmrichards/go-invaders/internal/machine"
+	"github.com/danmrichards/go-invaders/internal/memory"
 )
 
 var (

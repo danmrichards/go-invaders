@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/danmrichards/go-invaders/internal/memory"
@@ -13,11 +14,18 @@ import (
 var debug = flag.Bool("debug", false, "Run the emulator in debug mode")
 
 func TestCPU(t *testing.T) {
+	testHarness(t, filepath.Join("testdata", "8080PRE.COM"))
+	fmt.Println()
+
+	testHarness(t, filepath.Join("testdata", "TST8080.COM"))
+}
+
+func testHarness(t *testing.T, rom string) {
 	// Instantiate 64K of memory.
 	mem := make(memory.Basic, 65536)
 
 	// Load the test ROM.
-	rf, err := os.Open(filepath.Join("testdata", "8080PRE.COM"))
+	rf, err := os.Open(rom)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,15 +43,20 @@ func TestCPU(t *testing.T) {
 	mem.Write(1, 0)
 	mem.Write(2, 0x01)
 
+	// Fix a bug in the test ROM where it does not return from the final success
+	// message.
+	mem.Write(0x0005, 0xc9)
+
 	var opts []Option
 	if *debug {
 		opts = append(opts, WithDebugEnabled())
 	}
 	i80 := NewIntel8080(mem, opts...)
 
+	var sb strings.Builder
 	for {
 		if i80.halted {
-			return
+			t.Fatal("unexpected halt")
 		}
 
 		if err := i80.Step(); err != nil {
@@ -64,21 +77,20 @@ func TestCPU(t *testing.T) {
 						addr++
 					}
 
-					fmt.Printf("%c", c)
+					sb.WriteByte(c)
 				}
 			}
 			if i80.c == 0x02 {
-				//fmt.Printf("%c", i80.e)
+				sb.WriteByte(i80.e)
 			}
 		}
 
-		// TODO: Error detection?
 		if i80.pc == 0x00 {
-			fmt.Println()
-			fmt.Println()
 			break
 		}
-
-		//time.Sleep(50 * time.Millisecond)
 	}
+
+	fmt.Println("*******************")
+	fmt.Println(sb.String())
+	fmt.Println("*******************")
 }

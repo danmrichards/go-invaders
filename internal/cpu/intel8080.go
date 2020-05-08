@@ -84,10 +84,12 @@ func (i *Intel8080) Step() error {
 		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc-1))
 
 		fmt.Printf(
-			"%s\tCY=%v\tZ=%v\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
+			"%s\tCY=%v\tZ=%v\tP=%v\tS=%v\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
 			asm,
 			i.cc.cy,
 			i.cc.z,
+			i.cc.p,
+			i.cc.s,
 			i.sp,
 			i.a,
 			i.b,

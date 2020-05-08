@@ -15,6 +15,8 @@ func (i *Intel8080) add(b *byte) opHandler {
 // The next byte of data from memory is added to the contents of the accumulator
 // and relevant condition bits are set.
 func (i *Intel8080) adi() {
+	// TODO: Bug in here. TST8080.COM at PC=020f. Not setting the sign flag
+	// properly.
 	i.accumulatorAdd(i.immediateByte())
 }
 
