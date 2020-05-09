@@ -42,7 +42,7 @@ func (i *Intel8080) inx(x, y *byte) opHandler {
 
 		// Split the number back up.
 		*x = uint8(v >> 8)
-		*y = uint8(v)
+		*y = uint8(v & 0x00ff)
 	}
 }
 
@@ -62,12 +62,7 @@ func (i *Intel8080) inr(r *byte) opHandler {
 
 		// Set the zero condition bit accordingly based on if the result of the
 		// arithmetic was zero.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0xff (11111111 in base 2 and 255 in base 10).
-		//
-		// 00000000 & 11111111 = 0
-		i.cc.z = ans == 0x00
+		i.cc.z = uint8(ans) == 0x00
 
 		// Set the sign condition bit accordingly based on if the most
 		// significant bit on the result of the arithmetic was set.
@@ -80,7 +75,7 @@ func (i *Intel8080) inr(r *byte) opHandler {
 
 		// Set the auxiliary carry condition bit accordingly if the result of
 		// the arithmetic has a carry on the third bit.
-		i.cc.ac = (ans & 0x0f) == 0x00
+		i.cc.ac = (*r&0x0f)+0x01 > 0x0f
 
 		// Set the parity bit.
 		i.cc.setParity(uint8(ans))
@@ -98,19 +93,15 @@ func (i *Intel8080) inrM() {
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
+	n := i.mem.Read(addr)
 
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := i.mem.Read(addr) + 1
+	ans := uint16(n) + 1
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0xff (11111111 in base 2 and 255 in base 10).
-	//
-	// 00000000 & 11111111 = 0
-	i.cc.z = ans == 0x00
+	i.cc.z = uint8(ans) == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -123,12 +114,12 @@ func (i *Intel8080) inrM() {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (ans & 0x0f) == 0x00
+	i.cc.ac = (n&0x0f)+0x01 > 0x0f
 
 	// Set the parity bit.
-	i.cc.setParity(ans)
+	i.cc.setParity(uint8(ans))
 
-	i.mem.Write(addr, ans)
+	i.mem.Write(addr, uint8(ans))
 }
 
 // dcr is the "Decrement Register" handler.
@@ -142,12 +133,7 @@ func (i *Intel8080) dcr(r *byte) opHandler {
 
 		// Set the zero condition bit accordingly based on if the result of the
 		// arithmetic was zero.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0xff (11111111 in base 2 and 255 in base 10).
-		//
-		// 00000000 & 11111111 = 0
-		i.cc.z = ans == 0x00
+		i.cc.z = uint8(ans) == 0x00
 
 		// Set the sign condition bit accordingly based on if the most
 		// significant bit on the result of the arithmetic was set.
@@ -160,7 +146,7 @@ func (i *Intel8080) dcr(r *byte) opHandler {
 
 		// Set the auxiliary carry condition bit accordingly if the result of
 		// the arithmetic has a carry on the third bit.
-		i.cc.ac = !((ans & 0x0F) == 0x0F)
+		i.cc.ac = (ans & 0x0f) != 0x0f
 
 		// Set the parity bit.
 		i.cc.setParity(uint8(ans))
@@ -177,19 +163,15 @@ func (i *Intel8080) dcrM() {
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
+	n := i.mem.Read(addr)
 
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := i.mem.Read(addr) - 1
+	ans := uint16(n) - 1
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0xff (11111111 in base 2 and 255 in base 10).
-	//
-	// 00000000 & 11111111 = 0
-	i.cc.z = ans == 0x00
+	i.cc.z = uint8(ans) == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -202,12 +184,12 @@ func (i *Intel8080) dcrM() {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = !((ans & 0x0F) == 0x0F)
+	i.cc.ac = (ans & 0x0f) != 0x0f
 
 	// Set the parity bit.
-	i.cc.setParity(ans)
+	i.cc.setParity(uint8(ans))
 
-	i.mem.Write(addr, ans)
+	i.mem.Write(addr, uint8(ans))
 }
 
 // dad is the "Double Add" handler.
@@ -225,10 +207,8 @@ func (i *Intel8080) dad(x, y *byte) opHandler {
 
 		ans := hl + n
 
-		// Set the carry condition bit accordingly if the result of the
-		// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
-		// 10).
-		i.cc.cy = ans > 0xff-n
+		// Set the carry condition bit accordingly.
+		i.cc.cy = hl > 0xffff-n
 
 		// Store the answer back on to the HL register pair.
 		i.h = uint8(ans >> 8)
@@ -247,14 +227,12 @@ func (i *Intel8080) dadSP() {
 
 	ans := hl + i.sp
 
-	// Set the carry condition bit accordingly if the result of the
-	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
-	// 10).
-	i.cc.cy = ans > 0xff-i.sp
+	// Set the carry condition bit accordingly.
+	i.cc.cy = hl > 0xffff-i.sp
 
 	// Store the number back on to the HL register pair.
 	i.h = uint8(ans >> 8)
-	i.h = uint8(ans)
+	i.l = uint8(ans)
 }
 
 // dcx is the "Decrement Register Pair" handler.
@@ -268,7 +246,7 @@ func (i *Intel8080) dcx(x, y *byte) opHandler {
 
 		// Split the number back up.
 		*x = uint8(v >> 8)
-		*y = uint8(v)
+		*y = uint8(v & 0x00ff)
 	}
 }
 
@@ -282,7 +260,10 @@ func (i *Intel8080) dcxSP() {
 // The eight-bit hexadecimal number in the accumulator is adjusted to form two
 // four-bit binary coded decimal digits.
 func (i *Intel8080) daa() {
-	var a uint8
+	var (
+		a uint8
+		c = i.cc.cy
+	)
 
 	lsb := i.a & 0x0f
 	msb := i.a >> 4
@@ -299,10 +280,11 @@ func (i *Intel8080) daa() {
 	// most significant four bits of the accumulator are incremented by six.
 	if msb > 9 || i.cc.cy || (msb >= 9 && lsb > 9) {
 		a += 0x60
+		c = true
 	}
 
 	i.accumulatorAdd(a)
-	i.cc.cy = true
+	i.cc.cy = c
 }
 
 // adc is the "Add Register to Accumulator With Carry" handler.

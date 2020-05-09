@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/danmrichards/go-invaders/internal/memory"
@@ -18,9 +17,15 @@ func TestCPU(t *testing.T) {
 	fmt.Println()
 
 	testHarness(t, filepath.Join("testdata", "TST8080.COM"))
+	fmt.Println()
+
+	//testHarness(t, filepath.Join("testdata", "CPUTEST.COM"))
+	//testHarness(t, filepath.Join("testdata", "8080EXM.COM"))
 }
 
 func testHarness(t *testing.T, rom string) {
+	fmt.Println("*******************")
+
 	// Instantiate 64K of memory.
 	mem := make(memory.Basic, 65536)
 
@@ -53,7 +58,6 @@ func testHarness(t *testing.T, rom string) {
 	}
 	i80 := NewIntel8080(mem, opts...)
 
-	var sb strings.Builder
 	for {
 		if i80.halted {
 			t.Fatal("unexpected halt")
@@ -80,11 +84,11 @@ func testHarness(t *testing.T, rom string) {
 						addr++
 					}
 
-					sb.WriteByte(c)
+					fmt.Printf("%c", c)
 				}
 			}
 			if i80.c == 0x02 {
-				sb.WriteByte(i80.e)
+				fmt.Printf("%c", i80.e)
 			}
 		}
 
@@ -93,7 +97,6 @@ func testHarness(t *testing.T, rom string) {
 		}
 	}
 
-	fmt.Println("*******************")
-	fmt.Println(sb.String())
+	fmt.Println()
 	fmt.Println("*******************")
 }

@@ -150,7 +150,8 @@ func (i *Intel8080) shld() {
 // address replaces the contents of the H register.
 func (i *Intel8080) lhld() {
 	addr := i.immediateWord()
-	b := uint16(i.mem.Read(addr+1))<<8 | uint16(i.mem.Read(addr))
+
+	b := uint16(i.mem.Read(addr)) | uint16(i.mem.Read(addr+1))<<8
 
 	i.h = uint8(b >> 8)
 	i.l = uint8(b)
