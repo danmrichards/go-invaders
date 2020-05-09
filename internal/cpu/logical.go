@@ -1,7 +1,5 @@
 package cpu
 
-// TODO: One of these could have a bug; not setting carry flag properly.
-
 // cma is the "Compliment Accumulator" handler.
 //
 // Each bit of the contents of the accumulator is complemented (producing the
@@ -63,12 +61,30 @@ func (i *Intel8080) cpi() {
 	b := i.immediateByte()
 	n := i.a - b
 
-	// Set the condition bits.
-	i.cc.z = n == 0
+	// Set the zero condition bit accordingly based on if the result of the
+	// arithmetic was zero.
+	i.cc.z = uint8(n) == 0x00
+
+	// Set the sign condition bit accordingly based on if the most
+	// significant bit on the result of the arithmetic was set.
+	//
+	// Determine the result being zero with a bitwise AND operation against
+	// 0x80 (10000000 in base 2 and 128 in base 10).
+	//
+	// 10000000 & 10000000 = 1
 	i.cc.s = n&0x80 == 0x80
-	i.cc.setParity(n)
-	i.cc.ac = false
-	i.cc.cy = i.a < b
+
+	// Set the carry condition bit accordingly if the result of the
+	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
+	// 10).
+	i.cc.cy = i.a < n
+
+	// Set the auxiliary carry condition bit accordingly if the result of
+	// the arithmetic has a carry on the third bit.
+	i.cc.ac = (i.a&0x0f)-(n&0x0f) >= 0x00
+
+	// Set the parity bit.
+	i.cc.setParity(uint8(n))
 }
 
 // xra is the "Logical Exclusive-Or Register With Accumulator" handler.

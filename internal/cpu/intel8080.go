@@ -84,9 +84,10 @@ func (i *Intel8080) Step() error {
 		asm, _ := dasm.Disassemble(i.mem.ReadAll(), int64(i.pc-1))
 
 		fmt.Printf(
-			"%s\tCY=%v\tZ=%v\tP=%v\tS=%v\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
+			"%s\tCY=%v\tAC=%v\tZ=%v\tP=%v\tS=%v\tSP=%04x\tA=%02x\tB=%02x\tC=%02x\tD=%02x\tE=%02x\tH=%02x\tL=%02x\n",
 			asm,
 			i.cc.cy,
+			i.cc.ac,
 			i.cc.z,
 			i.cc.p,
 			i.cc.s,
@@ -143,12 +144,7 @@ func (i *Intel8080) accumulatorAdd(n byte) {
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0xff (11111111 in base 2 and 255 in base 10).
-	//
-	// 00000000 & 11111111 = 0
-	i.cc.z = ans&0xff == 0
+	i.cc.z = uint8(ans) == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -157,7 +153,7 @@ func (i *Intel8080) accumulatorAdd(n byte) {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 1
+	i.cc.s = ans&0x80 == 0x80
 
 	// Set the carry condition bit accordingly if the result of the
 	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
@@ -166,7 +162,7 @@ func (i *Intel8080) accumulatorAdd(n byte) {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = ans > 0x0f
+	i.cc.ac = (i.a&0x0f)+(n&0x0f) > 0x0f
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
@@ -184,12 +180,7 @@ func (i *Intel8080) accumulatorSub(n byte) {
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0xff (11111111 in base 2 and 255 in base 10).
-	//
-	// 00000000 & 11111111 = 0
-	i.cc.z = ans&0xff == 0
+	i.cc.z = uint8(ans) == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -198,16 +189,16 @@ func (i *Intel8080) accumulatorSub(n byte) {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 1
+	i.cc.s = ans&0x80 == 0x80
 
 	// Set the carry condition bit accordingly if the result of the
 	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
 	// 10).
-	i.cc.cy = ans < uint16(n)
+	i.cc.cy = ans > 0xff
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = ans > 0x0f
+	i.cc.ac = (uint16(i.a)&0x0f)+(ans&0x0f) > 0x0f
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))

@@ -63,7 +63,10 @@ func testHarness(t *testing.T, rom string) {
 			t.Fatal(err)
 		}
 
-		// TODO: Why does the printing work like this?
+		// Emulate the standard out process implemented in CP/M OS in order to
+		// allow us to see the output from the ROM.
+		//
+		// See: https://en.wikipedia.org/wiki/CP/M
 		if i80.pc == 0x05 {
 			if i80.c == 0x09 {
 				addr := uint16(i80.d)<<8 | uint16(i80.e)

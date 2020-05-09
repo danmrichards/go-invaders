@@ -15,8 +15,6 @@ func (i *Intel8080) add(b *byte) opHandler {
 // The next byte of data from memory is added to the contents of the accumulator
 // and relevant condition bits are set.
 func (i *Intel8080) adi() {
-	// TODO: Bug in here. TST8080.COM at PC=020f. Not setting the sign flag
-	// properly.
 	i.accumulatorAdd(i.immediateByte())
 }
 
@@ -69,7 +67,7 @@ func (i *Intel8080) inr(r *byte) opHandler {
 		// 0xff (11111111 in base 2 and 255 in base 10).
 		//
 		// 00000000 & 11111111 = 0
-		i.cc.z = ans&0xff == 0
+		i.cc.z = ans == 0x00
 
 		// Set the sign condition bit accordingly based on if the most
 		// significant bit on the result of the arithmetic was set.
@@ -78,7 +76,7 @@ func (i *Intel8080) inr(r *byte) opHandler {
 		// 0x80 (10000000 in base 2 and 128 in base 10).
 		//
 		// 10000000 & 10000000 = 1
-		i.cc.s = ans&0x80 == 1
+		i.cc.s = ans&0x80 == 0x80
 
 		// Set the auxiliary carry condition bit accordingly if the result of
 		// the arithmetic has a carry on the third bit.
@@ -112,7 +110,7 @@ func (i *Intel8080) inrM() {
 	// 0xff (11111111 in base 2 and 255 in base 10).
 	//
 	// 00000000 & 11111111 = 0
-	i.cc.z = ans&0xff == 0
+	i.cc.z = ans == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -121,7 +119,7 @@ func (i *Intel8080) inrM() {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 1
+	i.cc.s = ans&0x80 == 0x80
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
@@ -149,7 +147,7 @@ func (i *Intel8080) dcr(r *byte) opHandler {
 		// 0xff (11111111 in base 2 and 255 in base 10).
 		//
 		// 00000000 & 11111111 = 0
-		i.cc.z = ans&0xff == 0
+		i.cc.z = ans == 0x00
 
 		// Set the sign condition bit accordingly based on if the most
 		// significant bit on the result of the arithmetic was set.
@@ -158,7 +156,7 @@ func (i *Intel8080) dcr(r *byte) opHandler {
 		// 0x80 (10000000 in base 2 and 128 in base 10).
 		//
 		// 10000000 & 10000000 = 1
-		i.cc.s = ans&0x80 == 1
+		i.cc.s = ans&0x80 == 0x80
 
 		// Set the auxiliary carry condition bit accordingly if the result of
 		// the arithmetic has a carry on the third bit.
@@ -191,7 +189,7 @@ func (i *Intel8080) dcrM() {
 	// 0xff (11111111 in base 2 and 255 in base 10).
 	//
 	// 00000000 & 11111111 = 0
-	i.cc.z = ans&0xff == 0
+	i.cc.z = ans == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -200,7 +198,7 @@ func (i *Intel8080) dcrM() {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 1
+	i.cc.s = ans&0x80 == 0x80
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
@@ -234,7 +232,7 @@ func (i *Intel8080) dad(x, y *byte) opHandler {
 
 		// Store the answer back on to the HL register pair.
 		i.h = uint8(ans >> 8)
-		i.h = uint8(ans)
+		i.l = uint8(ans)
 	}
 }
 
@@ -313,12 +311,14 @@ func (i *Intel8080) daa() {
 // of the accumulator.
 func (i *Intel8080) adc(b *byte) opHandler {
 	return func() {
+		n := *b
+
 		// Increment the byte if the carry bit is set.
 		if i.cc.cy {
-			*b++
+			n++
 		}
 
-		i.accumulatorAdd(*b)
+		i.accumulatorAdd(n)
 	}
 }
 
@@ -375,12 +375,14 @@ func (i *Intel8080) subM() {
 // arithmetic.
 func (i *Intel8080) sbb(b *byte) opHandler {
 	return func() {
+		n := *b
+
 		// Increment the byte if the carry bit is set.
 		if i.cc.cy {
-			*b++
+			n++
 		}
 
-		i.accumulatorSub(*b)
+		i.accumulatorSub(n)
 	}
 }
 

@@ -1,7 +1,5 @@
 package cpu
 
-// TODO: One of these could have a bug; not setting carry flag properly.
-
 // pop is the "Pop Data Off Stack" handler.
 //
 // The contents of the specified register pair are restored from two bytes of

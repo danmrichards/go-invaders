@@ -10,7 +10,7 @@ func (i *Intel8080) registerOpHandlers() {
 	i.opHandlers = map[byte]opHandler{
 		0x00: i.nop,
 		0x01: i.lxi(&i.b, &i.c),
-		0x02: i.stax(&i.b, &i.e),
+		0x02: i.stax(&i.b, &i.c),
 		0x03: i.inx(&i.b, &i.c),
 		0x04: i.inr(&i.b),
 		0x05: i.dcr(&i.b),
