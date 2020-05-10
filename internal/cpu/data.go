@@ -173,6 +173,4 @@ func (i *Intel8080) xchg() {
 	e := i.e
 	i.l = e
 	i.e = l
-
-	return
 }

@@ -18,9 +18,6 @@ type Machine struct {
 	// For more details on the ROM structure see LoadROM.
 	mem memory.ReadWriteDumper
 
-	// If set to true the emulation cycle will print debug information.
-	debug bool
-
 	done <-chan struct{}
 }
 
