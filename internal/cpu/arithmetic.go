@@ -395,12 +395,43 @@ func (i *Intel8080) sbbM() {
 // added to the contents of the accumulator and relevant condition bits are set.
 func (i *Intel8080) aci() {
 	n := i.immediateByte()
-	// Increment the byte if the carry bit is set.
+
+	c := uint8(0)
 	if i.cc.cy {
-		n++
+		c++
 	}
 
-	i.accumulatorAdd(n)
+	// Perform the arithmetic at higher precision in order to capture the
+	// carry out.
+	ans := uint16(i.a) + uint16(n) + uint16(c)
+	r := byte(ans & 0xff)
+
+	// Set the zero condition bit accordingly based on if the result of the
+	// arithmetic was zero.
+	i.cc.z = r == 0x00
+
+	// Set the sign condition bit accordingly based on if the most
+	// significant bit on the result of the arithmetic was set.
+	//
+	// Determine the result being zero with a bitwise AND operation against
+	// 0x80 (10000000 in base 2 and 128 in base 10).
+	//
+	// 10000000 & 10000000 = 1
+	i.cc.s = r&0x80 == 0x80
+
+	// Set the carry condition bit accordingly if the result of the
+	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base 10).
+	i.cc.cy = ans > 0xff
+
+	// Set the auxiliary carry condition bit accordingly if the result of
+	// the arithmetic has a carry on the third bit.
+	i.cc.ac = (i.a&0x0f)+(n&0x0f)+c > 0x0f
+
+	// Set the parity bit.
+	i.cc.setParity(r)
+
+	// Finally update the accumulator.
+	i.a = r
 }
 
 // sui is the "Subtract Immediate from Accumulator" handler.
@@ -418,10 +449,41 @@ func (i *Intel8080) sui() {
 func (i *Intel8080) sbi() {
 	n := i.immediateByte()
 
-	// Increment the byte if the carry bit is set.
+	c := uint8(0)
 	if i.cc.cy {
-		n++
+		c++
 	}
 
-	i.accumulatorSub(n)
+	// Perform the arithmetic at higher precision in order to capture the
+	// carry out.
+	ans := uint16(i.a) - uint16(n) - uint16(c)
+	r := byte(ans & 0xff)
+
+	// Set the zero condition bit accordingly based on if the result of the
+	// arithmetic was zero.
+	i.cc.z = r == 0x00
+
+	// Set the sign condition bit accordingly based on if the most
+	// significant bit on the result of the arithmetic was set.
+	//
+	// Determine the result being zero with a bitwise AND operation against
+	// 0x80 (10000000 in base 2 and 128 in base 10).
+	//
+	// 10000000 & 10000000 = 1
+	i.cc.s = r&0x80 == 0x80
+
+	// Set the carry condition bit accordingly if the result of the
+	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
+	// 10).
+	i.cc.cy = uint16(i.a) < uint16(n)+uint16(c)
+
+	// Set the auxiliary carry condition bit accordingly if the result of
+	// the arithmetic has a carry on the third bit.
+	i.cc.ac = (i.a&0x0f)-(n&0x0f)-c >= 0x00
+
+	// Set the parity bit.
+	i.cc.setParity(r)
+
+	// Finally update the accumulator.
+	i.a = r
 }

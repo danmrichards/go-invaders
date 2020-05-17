@@ -18,8 +18,9 @@ func (i *Intel8080) ani() {
 	n := i.a & i.immediateByte()
 
 	// Set the condition bits accordingly.
-	i.cc.z = n == 0
+	i.cc.z = n == 0x00
 	i.cc.s = n&0x80 == 0x80
+	i.cc.ac = (i.a|n)&0x08 != 0
 	i.cc.setParity(n)
 	i.cc.cy = false
 
@@ -58,33 +59,9 @@ func (i *Intel8080) rar() {
 
 // cpi is the "Compare Immediate With Accumulator" handler.
 func (i *Intel8080) cpi() {
-	b := i.immediateByte()
-	n := i.a - b
-
-	// Set the zero condition bit accordingly based on if the result of the
-	// arithmetic was zero.
-	i.cc.z = uint8(n) == 0x00
-
-	// Set the sign condition bit accordingly based on if the most
-	// significant bit on the result of the arithmetic was set.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0x80 (10000000 in base 2 and 128 in base 10).
-	//
-	// 10000000 & 10000000 = 1
-	i.cc.s = n&0x80 == 0x80
-
-	// Set the carry condition bit accordingly if the result of the
-	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
-	// 10).
-	i.cc.cy = i.a < n
-
-	// Set the auxiliary carry condition bit accordingly if the result of
-	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.a&0x0f)-(n&0x0f) >= 0x00
-
-	// Set the parity bit.
-	i.cc.setParity(uint8(n))
+	a := i.a
+	i.accumulatorSub(i.immediateByte())
+	i.a = a
 }
 
 // xra is the "Logical Exclusive-Or Register With Accumulator" handler.
@@ -93,7 +70,7 @@ func (i *Intel8080) cpi() {
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) xra(b *byte) opHandler {
 	return func() {
-		n := *b ^ i.a
+		n := i.a ^ *b
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
@@ -115,7 +92,7 @@ func (i *Intel8080) xraM() {
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
 
-	n := i.mem.Read(addr) ^ i.a
+	n := i.a ^ i.mem.Read(addr)
 
 	i.cc.z = n == 0
 	i.cc.s = n&0x80 == 0x80
@@ -132,12 +109,12 @@ func (i *Intel8080) xraM() {
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) ana(b *byte) opHandler {
 	return func() {
-		n := *b & i.a
+		n := i.a & *b
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
+		i.cc.ac = (i.a|n)&0x08 != 0
 		i.cc.setParity(n)
-		i.cc.ac = false
 		i.cc.cy = false
 
 		i.a = n
@@ -154,7 +131,7 @@ func (i *Intel8080) anaM() {
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
 
-	n := i.mem.Read(addr) & i.a
+	n := i.a & i.mem.Read(addr)
 
 	i.cc.z = n == 0
 	i.cc.s = n&0x80 == 0x80
@@ -171,7 +148,7 @@ func (i *Intel8080) anaM() {
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) ora(b *byte) opHandler {
 	return func() {
-		n := *b | i.a
+		n := i.a | *b
 
 		i.cc.z = n == 0
 		i.cc.s = n&0x80 == 0x80
@@ -193,7 +170,7 @@ func (i *Intel8080) oraM() {
 	// side of the register pair.
 	addr := uint16(i.h)<<8 | uint16(i.l)
 
-	n := i.mem.Read(addr) | i.a
+	n := i.a | i.mem.Read(addr)
 
 	i.cc.z = n == 0
 	i.cc.s = n&0x80 == 0x80
@@ -217,14 +194,9 @@ func (i *Intel8080) oraM() {
 // are greater than the contents of the accumulator, and reset otherwise.
 func (i *Intel8080) cmp(b *byte) opHandler {
 	return func() {
-		n := i.a - *b
-
-		// Set the condition bits.
-		i.cc.z = n == 0
-		i.cc.s = n&0x80 == 0x80
-		i.cc.setParity(n)
-		i.cc.ac = false
-		i.cc.cy = i.a < *b
+		a := i.a
+		i.accumulatorSub(*b)
+		i.a = a
 	}
 }
 
@@ -299,9 +271,9 @@ func (i *Intel8080) ral() {
 // The byte of immediate data is EXCLUSIVE-ORed with the contents of the
 // accumulator. The carry bit is set to zero.
 func (i *Intel8080) xri() {
-	n := i.immediateByte() ^ i.a
+	n := i.a ^ i.immediateByte()
 
-	i.cc.z = n == 0
+	i.cc.z = n == 0x00
 	i.cc.s = n&0x80 == 0x80
 	i.cc.setParity(n)
 	i.cc.ac = false
@@ -315,9 +287,9 @@ func (i *Intel8080) xri() {
 // The byte of immediate data is logically ORed bit by bit with the contents of
 // the accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) ori() {
-	n := i.immediateByte() | i.a
+	n := i.a | i.immediateByte()
 
-	i.cc.z = n == 0
+	i.cc.z = n == 0x00
 	i.cc.s = n&0x80 == 0x80
 	i.cc.setParity(n)
 	i.cc.ac = false
