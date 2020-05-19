@@ -91,3 +91,11 @@ func (c *conditions) setStatus(b byte) {
 	c.p = (b >> 2 & 0x01) == 0x01
 	c.cy = (b & 0x1) == 0x1
 }
+
+// carryByte returns a byte representation of the carry flag.
+func (c *conditions) carryByte() byte {
+	if c.cy {
+		return 1
+	}
+	return 0
+}

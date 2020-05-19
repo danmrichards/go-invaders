@@ -11,16 +11,8 @@ import (
 
 // Intel8080 represents the Intel 8080 CPU.
 type Intel8080 struct {
-	// Working "scratchpad" registers.
-	b byte
-	c byte
-	d byte
-	e byte
-	h byte
-	l byte
-
-	// 8-bit accumulator.
-	a byte
+	// Registers including working "scratchpads" and the accumulator.
+	R [8]byte
 
 	// Stack pointer, stores address of last program request in the stack.
 	sp uint16
@@ -40,9 +32,6 @@ type Intel8080 struct {
 	// Provides an interface to enable reads and writes to memory.
 	mem memory.ReadWriteDumper
 
-	// Each supported opcode has a handler function.
-	opHandlers map[byte]opHandler
-
 	// If set to true the emulation cycle will print debug information.
 	debug bool
 }
@@ -60,15 +49,13 @@ func WithDebugEnabled() Option {
 // NewIntel8080 returns an instantiated Intel 8080.
 func NewIntel8080(mem memory.ReadWriteDumper, opts ...Option) *Intel8080 {
 	i := &Intel8080{
-		cc:  newConditions(),
+		cc:  &conditions{},
 		mem: mem,
 	}
 
 	for _, o := range opts {
 		o(i)
 	}
-
-	i.registerOpHandlers()
 
 	return i
 }
@@ -92,33 +79,24 @@ func (i *Intel8080) Step() error {
 			i.cc.p,
 			i.cc.s,
 			i.sp,
-			i.a,
-			i.b,
-			i.c,
-			i.d,
-			i.e,
-			i.h,
-			i.l,
+			i.R[A],
+			i.R[B],
+			i.R[C],
+			i.R[D],
+			i.R[E],
+			i.R[H],
+			i.R[L],
 		)
 	}
 
-	// Lookup the opcode handler.
-	h, ok := i.opHandlers[opc]
-	if !ok {
-		return fmt.Errorf(
-			"unsupported opcode 0x%02x at program counter %04x", opc, i.pc,
-		)
-	}
-	h()
-
-	return nil
+	return i.handleOp(opc)
 }
 
 // immediateByte returns the next byte from memory indicated by the program
 // counter.
 //
 // The program counter is incremented by one after the read.
-func (i *Intel8080) immediateByte() uint8 {
+func (i *Intel8080) immediateByte() byte {
 	b := i.mem.Read(i.pc)
 	i.pc++
 
@@ -129,23 +107,22 @@ func (i *Intel8080) immediateByte() uint8 {
 //
 // The program counter is incremented by two after the read.
 func (i *Intel8080) immediateWord() uint16 {
-	w := uint16(i.mem.Read(i.pc)) | uint16(i.mem.Read(i.pc+1))<<8
-	i.pc += 2
+	lo := i.immediateByte()
+	hi := i.immediateByte()
 
-	return w
+	return uint16(lo) | uint16(hi)<<8
 }
 
 // accumulatorAdd adds the given byte n to the accumulator and sets the relevant
 // condition bits.
-func (i *Intel8080) accumulatorAdd(n byte) {
+func (i *Intel8080) accumulatorAdd(n, carry byte) {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := uint16(i.a) + uint16(n)
-	r := byte(ans & 0xff)
+	ans := uint16(i.R[A]) + uint16(n) + uint16(carry)
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	i.cc.z = r == 0x00
+	i.cc.z = ans&0xff == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -154,34 +131,33 @@ func (i *Intel8080) accumulatorAdd(n byte) {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = r&0x80 == 0x80
+	i.cc.s = (ans & 0x80) != 0
 
 	// Set the carry condition bit accordingly if the result of the
 	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base 10).
-	i.cc.cy = ans > 0xff
+	i.cc.cy = (ans & 0x100) != 0
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.a&0x0f)+(n&0x0f) > 0x0f
+	i.cc.ac = (i.R[A]^uint8(ans)^n)&0x10 != 0
 
 	// Set the parity bit.
-	i.cc.setParity(r)
+	i.cc.setParity(uint8(ans))
 
 	// Finally update the accumulator.
-	i.a = r
+	i.R[A] = byte(ans)
 }
 
 // accumulatorSub subtracts the given byte n from the accumulator and sets the
 // relevant condition bits.
-func (i *Intel8080) accumulatorSub(n byte) {
+func (i *Intel8080) accumulatorSub(n, carry byte) {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := uint16(i.a) - uint16(n)
-	r := byte(ans & 0xff)
+	ans := uint16(i.R[A]) - uint16(n) - uint16(carry)
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
-	i.cc.z = r == 0x00
+	i.cc.z = ans&0xff == 0x00
 
 	// Set the sign condition bit accordingly based on if the most
 	// significant bit on the result of the arithmetic was set.
@@ -190,22 +166,22 @@ func (i *Intel8080) accumulatorSub(n byte) {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = r&0x80 == 0x80
+	i.cc.s = (ans & 0x80) != 0
 
 	// Set the carry condition bit accordingly if the result of the
 	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
 	// 10).
-	i.cc.cy = uint16(i.a) < uint16(n)
+	i.cc.cy = (ans & 0x100) != 0
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.a&0x0f)-(n&0x0f) >= 0x00
+	i.cc.ac = ^(i.R[A]^uint8(ans)^n)&0x10 != 0
 
 	// Set the parity bit.
-	i.cc.setParity(r)
+	i.cc.setParity(uint8(ans))
 
 	// Finally update the accumulator.
-	i.a = r
+	i.R[A] = byte(ans)
 }
 
 // stackAdd adds the given word to the stack.

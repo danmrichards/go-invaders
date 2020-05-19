@@ -1,43 +1,42 @@
 package cpu
 
-// lxi is the "Load Immediate Register" handler.
-//
-// This handler operates on a CPU register pair.
-//
-// Because the 8080 works on little-endian byte order, the first register in the
-// pair stores the 8 most significant bits of an address while the second
-// register stores the 8 least significant bits.
-func (i *Intel8080) lxi(x, y *byte) opHandler {
-	return func() {
-		w := i.immediateWord()
-
-		*x = uint8(w >> 8)
-		*y = uint8(w & 0x00ff)
-	}
-}
-
-// lxi is the "Load Immediate Stack Pointer" handler.
-func (i *Intel8080) lxiSP() {
-	i.sp = i.immediateWord()
-}
-
 // movRR is the "Move Register to Register" handler.
 //
 // One byte of data is moved from the register specified by src (the source
 // register) to the register specified by dst (the destination register).
-func (i *Intel8080) movRR(dst, src *byte) opHandler {
-	return func() {
-		*dst = *src
-	}
+func (i *Intel8080) movRR(opc byte) {
+	d := (opc >> 3) & 0x7
+	s := opc & 0x7
+	i.R[d] = i.R[s]
+}
+
+// movRR is the "Move Memory to Register" handler.
+//
+// One byte of data is moved from the memory address pointed by the HL register
+// pair, to the given register r.
+func (i *Intel8080) movMR(opc byte) {
+	d := (opc >> 3) & 0x7
+	a := i.hl()
+	i.R[d] = i.mem.Read(a)
+}
+
+// movRR is the "Move Register to Memory" handler.
+//
+// One byte of data is moved from the register specified by r (the source
+// register) to the memory address pointed by the HL register pair.
+func (i *Intel8080) movRM(opc byte) {
+	s := opc & 0x7
+	a := i.hl()
+	i.mem.Write(a, i.R[s])
 }
 
 // mvi is the "Move Immediate Data" handler.
 //
 // The byte of immediate data is stored in the specified register.
-func (i *Intel8080) mvi(dst *byte) opHandler {
-	return func() {
-		*dst = i.immediateByte()
-	}
+func (i *Intel8080) mvi(opc byte) {
+	d := (opc >> 3) & 0x7
+	v := i.immediateByte()
+	i.R[d] = v
 }
 
 // mvi is the "Move Immediate Data Memory" handler.
@@ -48,7 +47,7 @@ func (i *Intel8080) mviM() {
 	// Determine the address of the byte pointed by the HL register pair.
 	// The address is two bytes long, so merge the two bytes stored in each
 	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
+	addr := i.hl()
 
 	i.mem.Write(addr, i.immediateByte())
 }
@@ -57,76 +56,16 @@ func (i *Intel8080) mviM() {
 //
 // The contents of the memory location addressed by registers B and C, or by
 // registers D and E, replace the contents of the accumulator.
-func (i *Intel8080) ldax(x, y *byte) opHandler {
-	return func() {
-		// Determine the address of the byte pointed by the given register pair.
-		// The address is two bytes long, so merge the two bytes stored in each
-		// side of the register pair.
-		addr := uint16(*x)<<8 | uint16(*y)
-
-		i.a = i.mem.Read(addr)
-	}
-}
-
-// movRR is the "Move Register to Memory" handler.
-//
-// One byte of data is moved from the register specified by r (the source
-// register) to the memory address pointed by the HL register pair.
-func (i *Intel8080) movRM(r *byte) opHandler {
-	return func() {
-		// Determine the address of the byte pointed by the HL register pair.
-		// The address is two bytes long, so merge the two bytes stored in each
-		// side of the register pair.
-		addr := uint16(i.h)<<8 | uint16(i.l)
-
-		i.mem.Write(addr, *r)
-	}
-}
-
-// sta is the "Store Accumulator Direct" handler.
-//
-// The contents of the accumulator replace the byte at the memory address formed
-// by concatenating HI ADD with LOW ADD.
-func (i *Intel8080) sta() {
-	i.mem.Write(i.immediateWord(), i.a)
-}
-
-// movRR is the "Move Memory to Register" handler.
-//
-// One byte of data is moved from the memory address pointed by the HL register
-// pair, to the given register r.
-func (i *Intel8080) movMR(r *byte) opHandler {
-	return func() {
-		// Determine the address of the byte pointed by the HL register pair.
-		// The address is two bytes long, so merge the two bytes stored in each
-		// side of the register pair.
-		addr := uint16(i.h)<<8 | uint16(i.l)
-
-		*r = i.mem.Read(addr)
-	}
-}
-
-// lda is the "Load Accumulator Direct" handler.
-//
-// The byte at the memory address formed by concatenating HI ADD with LOW ADD
-// replaces the contents of the accumulator.
-func (i *Intel8080) lda() {
-	i.a = i.mem.Read(i.immediateWord())
+func (i *Intel8080) ldax(addr uint16) {
+	i.R[A] = i.mem.Read(addr)
 }
 
 // stax is the "Store Accumulator" handler.
 //
 // The contents of the accumulator are stored in the memory location addressed
 // by registers B an dC, or by registers 0 and E.
-func (i *Intel8080) stax(x, y *byte) opHandler {
-	return func() {
-		// Determine the address of the byte pointed by the given register pair.
-		// The address is two bytes long, so merge the two bytes stored in each
-		// side of the register pair.
-		addr := uint16(*x)<<8 | uint16(*y)
-
-		i.mem.Write(addr, i.a)
-	}
+func (i *Intel8080) stax(addr uint16) {
+	i.mem.Write(addr, i.R[A])
 }
 
 // shld is the "Store H and L Direct" handler.
@@ -137,7 +76,7 @@ func (i *Intel8080) stax(x, y *byte) opHandler {
 func (i *Intel8080) shld() {
 	addr := i.immediateWord()
 
-	hl := uint16(i.h)<<8 | uint16(i.l)
+	hl := i.hl()
 
 	i.mem.Write(addr, byte(hl&0xff))
 	i.mem.Write(addr+1, byte(hl>>8))
@@ -153,8 +92,7 @@ func (i *Intel8080) lhld() {
 
 	b := uint16(i.mem.Read(addr)) | uint16(i.mem.Read(addr+1))<<8
 
-	i.h = uint8(b >> 8)
-	i.l = uint8(b)
+	i.setHL(b)
 }
 
 // xchg is the "Exchange Registers" handler.
@@ -162,15 +100,7 @@ func (i *Intel8080) lhld() {
 // The 16 bits of data held in the H and L registers are exchanged with the 16
 // bits of data held in the D and E registers.
 func (i *Intel8080) xchg() {
-	// Swap H <-> D.
-	d := i.d
-	h := i.h
-	i.h = d
-	i.d = h
-
-	// Swap L <-> E.
-	l := i.l
-	e := i.e
-	i.l = e
-	i.e = l
+	de, hl := i.de(), i.hl()
+	i.setDE(hl)
+	i.setHL(de)
 }

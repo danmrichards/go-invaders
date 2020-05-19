@@ -4,10 +4,8 @@ package cpu
 //
 // The given byte is added to the contents of the accumulator and relevant
 // condition bits are set.
-func (i *Intel8080) add(b *byte) opHandler {
-	return func() {
-		i.accumulatorAdd(*b)
-	}
+func (i *Intel8080) add(n byte) {
+	i.accumulatorAdd(n, 0)
 }
 
 // adi is the "Add Immediate to Accumulator" handler.
@@ -15,7 +13,7 @@ func (i *Intel8080) add(b *byte) opHandler {
 // The next byte of data from memory is added to the contents of the accumulator
 // and relevant condition bits are set.
 func (i *Intel8080) adi() {
-	i.accumulatorAdd(i.immediateByte())
+	i.accumulatorAdd(i.immediateByte(), 0)
 }
 
 // addM is the "Add Memory to Accumulator" handler.
@@ -23,27 +21,7 @@ func (i *Intel8080) adi() {
 // The byte pointed to by the HL register pair is added to the contents of the
 // accumulator and relevant condition bits are set.
 func (i *Intel8080) addM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-
-	i.accumulatorAdd(i.mem.Read(addr))
-}
-
-// inx is the "Increment Register Pair" handler.
-//
-// The number held in the given register pair is incremented by one.
-func (i *Intel8080) inx(x, y *byte) opHandler {
-	return func() {
-		// Get the full number held across the register pair.
-		v := uint16(*x)<<8 | uint16(*y)
-		v++
-
-		// Split the number back up.
-		*x = uint8(v >> 8)
-		*y = uint8(v & 0x00ff)
-	}
+	i.accumulatorAdd(i.mem.Read(i.hl()), 0)
 }
 
 // inxSP is the "Increment Stack Pointer" handler.
@@ -54,47 +32,7 @@ func (i *Intel8080) inxSP() {
 // inr is the "Increment Register" handler.
 //
 // The specified register is incremented by one.
-func (i *Intel8080) inr(r *byte) opHandler {
-	return func() {
-		// Perform the arithmetic at higher precision in order to capture the
-		// carry out.
-		ans := uint16(*r) + 1
-
-		// Set the zero condition bit accordingly based on if the result of the
-		// arithmetic was zero.
-		i.cc.z = uint8(ans) == 0x00
-
-		// Set the sign condition bit accordingly based on if the most
-		// significant bit on the result of the arithmetic was set.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0x80 (10000000 in base 2 and 128 in base 10).
-		//
-		// 10000000 & 10000000 = 1
-		i.cc.s = ans&0x80 == 0x80
-
-		// Set the auxiliary carry condition bit accordingly if the result of
-		// the arithmetic has a carry on the third bit.
-		i.cc.ac = (*r&0x0f)+0x01 > 0x0f
-
-		// Set the parity bit.
-		i.cc.setParity(uint8(ans))
-
-		*r = uint8(ans)
-	}
-}
-
-// inrM is the "Increment Memory" handler.
-//
-// The byte pointed to by the HL register pair is incremented by one and
-// relevant condition bits are set.
-func (i *Intel8080) inrM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-	n := i.mem.Read(addr)
-
+func (i *Intel8080) inr(n byte) byte {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
 	ans := uint16(n) + 1
@@ -110,61 +48,32 @@ func (i *Intel8080) inrM() {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 0x80
+	i.cc.s = ans&0x80 != 0x00
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (n&0x0f)+0x01 > 0x0f
+	i.cc.ac = ans&0xf == 0x00
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
 
-	i.mem.Write(addr, uint8(ans))
+	return byte(ans)
+}
+
+// inrM is the "Increment Memory" handler.
+//
+// The byte pointed to by the HL register pair is incremented by one and
+// relevant condition bits are set.
+func (i *Intel8080) inrM() {
+	addr := i.hl()
+
+	i.mem.Write(addr, i.inr(i.mem.Read(addr)))
 }
 
 // dcr is the "Decrement Register" handler.
 //
 // The specified register is decremented by one.
-func (i *Intel8080) dcr(r *byte) opHandler {
-	return func() {
-		// Perform the arithmetic at higher precision in order to capture the
-		// carry out.
-		ans := uint16(*r) - 1
-
-		// Set the zero condition bit accordingly based on if the result of the
-		// arithmetic was zero.
-		i.cc.z = uint8(ans) == 0x00
-
-		// Set the sign condition bit accordingly based on if the most
-		// significant bit on the result of the arithmetic was set.
-		//
-		// Determine the result being zero with a bitwise AND operation against
-		// 0x80 (10000000 in base 2 and 128 in base 10).
-		//
-		// 10000000 & 10000000 = 1
-		i.cc.s = ans&0x80 == 0x80
-
-		// Set the auxiliary carry condition bit accordingly if the result of
-		// the arithmetic has a carry on the third bit.
-		i.cc.ac = (ans & 0x0f) != 0x0f
-
-		// Set the parity bit.
-		i.cc.setParity(uint8(ans))
-
-		*r = uint8(ans)
-	}
-}
-
-// dcrM is the "Decrement Memory" handler.
-//
-// The specified register is decremented by one.
-func (i *Intel8080) dcrM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-	n := i.mem.Read(addr)
-
+func (i *Intel8080) dcr(n byte) byte {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
 	ans := uint16(n) - 1
@@ -180,16 +89,28 @@ func (i *Intel8080) dcrM() {
 	// 0x80 (10000000 in base 2 and 128 in base 10).
 	//
 	// 10000000 & 10000000 = 1
-	i.cc.s = ans&0x80 == 0x80
+	i.cc.s = ans&0x80 != 0x00
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (ans & 0x0f) != 0x0f
+	i.cc.ac = !(ans&0xf == 0xf)
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
 
-	i.mem.Write(addr, uint8(ans))
+	return uint8(ans)
+}
+
+// dcrM is the "Decrement Memory" handler.
+//
+// The specified register is decremented by one.
+func (i *Intel8080) dcrM() {
+	// Determine the address of the byte pointed by the HL register pair.
+	// The address is two bytes long, so merge the two bytes stored in each
+	// side of the register pair.
+	addr := i.hl()
+
+	i.mem.Write(addr, i.dcr(i.mem.Read(addr)))
 }
 
 // dad is the "Double Add" handler.
@@ -197,23 +118,13 @@ func (i *Intel8080) dcrM() {
 // The 16-bit number in the specified register pair is added to the 16-bit
 // number held in the H and L registers using two's complement arithmetic. The
 // result replaces the contents of the H and L registers.
-func (i *Intel8080) dad(x, y *byte) opHandler {
-	return func() {
-		// Get the full number held across the register pair.
-		n := uint16(*x)<<8 | uint16(*y)
+func (i *Intel8080) dad(n uint16) {
+	ans := uint32(i.hl()) + uint32(n)
 
-		// Get the full number held in the HL register pair.
-		hl := uint16(i.h)<<8 | uint16(i.l)
+	// Set the carry condition bit accordingly.
+	i.cc.cy = ans&0x10000 != 0
 
-		ans := hl + n
-
-		// Set the carry condition bit accordingly.
-		i.cc.cy = hl > 0xffff-n
-
-		// Store the answer back on to the HL register pair.
-		i.h = uint8(ans >> 8)
-		i.l = uint8(ans)
-	}
+	i.setHL(uint16(ans))
 }
 
 // dad is the "Double Add Stack Pointer" handler.
@@ -222,32 +133,12 @@ func (i *Intel8080) dad(x, y *byte) opHandler {
 // the H and L registers using two's complement arithmetic. The result replaces
 // the contents of the H and L registers.
 func (i *Intel8080) dadSP() {
-	// Get the full number held in the HL register pair.
-	hl := uint16(i.h)<<8 | uint16(i.l)
-
-	ans := hl + i.sp
+	ans := uint32(i.hl()) + uint32(i.sp)
 
 	// Set the carry condition bit accordingly.
-	i.cc.cy = hl > 0xffff-i.sp
+	i.cc.cy = ans&0x10000 != 0
 
-	// Store the number back on to the HL register pair.
-	i.h = uint8(ans >> 8)
-	i.l = uint8(ans)
-}
-
-// dcx is the "Decrement Register Pair" handler.
-//
-// The number held in the given register pair is decremented by one.
-func (i *Intel8080) dcx(x, y *byte) opHandler {
-	return func() {
-		// Get the full number held across the register pair.
-		v := uint16(*x)<<8 | uint16(*y)
-		v--
-
-		// Split the number back up.
-		*x = uint8(v >> 8)
-		*y = uint8(v & 0x00ff)
-	}
+	i.setHL(uint16(ans))
 }
 
 // dcxSP is the "Decrement Stack Pointer" handler.
@@ -265,8 +156,8 @@ func (i *Intel8080) daa() {
 		c = i.cc.cy
 	)
 
-	lsb := i.a & 0x0f
-	msb := i.a >> 4
+	lsb := i.R[A] & 0x0f
+	msb := i.R[A] >> 4
 
 	// If the least significant four bits of the accumulator represents a number
 	// greater than 9, or if the Auxiliary Carry bit is equal to one, the
@@ -283,7 +174,8 @@ func (i *Intel8080) daa() {
 		c = true
 	}
 
-	i.accumulatorAdd(a)
+	i.accumulatorAdd(a, 0)
+	i.cc.setParity(i.R[A])
 	i.cc.cy = c
 }
 
@@ -291,17 +183,8 @@ func (i *Intel8080) daa() {
 //
 // The specified byte plus the content of the Carry bit is added to the contents
 // of the accumulator.
-func (i *Intel8080) adc(b *byte) opHandler {
-	return func() {
-		n := *b
-
-		// Increment the byte if the carry bit is set.
-		if i.cc.cy {
-			n++
-		}
-
-		i.accumulatorAdd(n)
-	}
+func (i *Intel8080) adc(n byte) {
+	i.accumulatorAdd(n, i.cc.carryByte())
 }
 
 // adcM is the "Add Memory to Accumulator With Carry" handler.
@@ -313,28 +196,15 @@ func (i *Intel8080) adc(b *byte) opHandler {
 // bit, is added to the contents of the accumulator and relevant condition bits
 // are set.
 func (i *Intel8080) adcM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-	n := i.mem.Read(addr)
-
-	// Increment the byte if the carry bit is set.
-	if i.cc.cy {
-		n++
-	}
-
-	i.accumulatorAdd(n)
+	i.accumulatorAdd(i.mem.Read(i.hl()), i.cc.carryByte())
 }
 
 // sub is the "Subtract Register from Accumulator" handler.
 //
 // The given byte is subtracted from the contents of the accumulator and
 // relevant condition bits are set.
-func (i *Intel8080) sub(b *byte) opHandler {
-	return func() {
-		i.accumulatorSub(*b)
-	}
+func (i *Intel8080) sub(n byte) {
+	i.accumulatorSub(n, 0)
 }
 
 // subM is the "Subtract Memory from Accumulator" handler.
@@ -342,12 +212,7 @@ func (i *Intel8080) sub(b *byte) opHandler {
 // The byte pointed to by the HL register pair is subtracted from the contents
 // of the accumulator and relevant condition bits are set.
 func (i *Intel8080) subM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-
-	i.accumulatorSub(i.mem.Read(addr))
+	i.accumulatorSub(i.mem.Read(i.hl()), 0)
 }
 
 // sbb is the "Subtract Register from Accumulator With Borrow" handler.
@@ -355,17 +220,8 @@ func (i *Intel8080) subM() {
 // The Carry bit is internally added to the contents of the specified byte. This
 // value is then subtracted from the accumulator using two's complement
 // arithmetic.
-func (i *Intel8080) sbb(b *byte) opHandler {
-	return func() {
-		n := *b
-
-		// Increment the byte if the carry bit is set.
-		if i.cc.cy {
-			n++
-		}
-
-		i.accumulatorSub(n)
-	}
+func (i *Intel8080) sbb(n byte) {
+	i.accumulatorSub(n, i.cc.carryByte())
 }
 
 // sbbM is the "Subtract Memory from Accumulator With Borrow" handler.
@@ -374,19 +230,7 @@ func (i *Intel8080) sbb(b *byte) opHandler {
 // the HL register pair. This value is then subtracted from the accumulator
 // using two's complement arithmetic.
 func (i *Intel8080) sbbM() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-
-	n := i.mem.Read(addr)
-
-	// Increment the byte if the carry bit is set.
-	if i.cc.cy {
-		n++
-	}
-
-	i.accumulatorSub(n)
+	i.accumulatorSub(i.mem.Read(i.hl()), i.cc.carryByte())
 }
 
 // aci is the "Add Immediate to Accumulator With Carry" handler.
@@ -394,44 +238,7 @@ func (i *Intel8080) sbbM() {
 // The next byte of data from memory, plus the contents of the Carry bit, is
 // added to the contents of the accumulator and relevant condition bits are set.
 func (i *Intel8080) aci() {
-	n := i.immediateByte()
-
-	c := uint8(0)
-	if i.cc.cy {
-		c++
-	}
-
-	// Perform the arithmetic at higher precision in order to capture the
-	// carry out.
-	ans := uint16(i.a) + uint16(n) + uint16(c)
-	r := byte(ans & 0xff)
-
-	// Set the zero condition bit accordingly based on if the result of the
-	// arithmetic was zero.
-	i.cc.z = r == 0x00
-
-	// Set the sign condition bit accordingly based on if the most
-	// significant bit on the result of the arithmetic was set.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0x80 (10000000 in base 2 and 128 in base 10).
-	//
-	// 10000000 & 10000000 = 1
-	i.cc.s = r&0x80 == 0x80
-
-	// Set the carry condition bit accordingly if the result of the
-	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base 10).
-	i.cc.cy = ans > 0xff
-
-	// Set the auxiliary carry condition bit accordingly if the result of
-	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.a&0x0f)+(n&0x0f)+c > 0x0f
-
-	// Set the parity bit.
-	i.cc.setParity(r)
-
-	// Finally update the accumulator.
-	i.a = r
+	i.accumulatorAdd(i.immediateByte(), i.cc.carryByte())
 }
 
 // sui is the "Subtract Immediate from Accumulator" handler.
@@ -439,7 +246,7 @@ func (i *Intel8080) aci() {
 // The next byte of data from memory is subtracted from the contents of the
 // accumulator and relevant condition bits are set.
 func (i *Intel8080) sui() {
-	i.accumulatorSub(i.immediateByte())
+	i.accumulatorSub(i.immediateByte(), 0)
 }
 
 // sbi is the "Subtract Immediate from Accumulator With Borrow" handler.
@@ -447,43 +254,5 @@ func (i *Intel8080) sui() {
 // The Carry bit is internally added to the byte of immediate data. This value
 // is then subtracted from the accumulator using two'scomplement arithmetic.
 func (i *Intel8080) sbi() {
-	n := i.immediateByte()
-
-	c := uint8(0)
-	if i.cc.cy {
-		c++
-	}
-
-	// Perform the arithmetic at higher precision in order to capture the
-	// carry out.
-	ans := uint16(i.a) - uint16(n) - uint16(c)
-	r := byte(ans & 0xff)
-
-	// Set the zero condition bit accordingly based on if the result of the
-	// arithmetic was zero.
-	i.cc.z = r == 0x00
-
-	// Set the sign condition bit accordingly based on if the most
-	// significant bit on the result of the arithmetic was set.
-	//
-	// Determine the result being zero with a bitwise AND operation against
-	// 0x80 (10000000 in base 2 and 128 in base 10).
-	//
-	// 10000000 & 10000000 = 1
-	i.cc.s = r&0x80 == 0x80
-
-	// Set the carry condition bit accordingly if the result of the
-	// arithmetic was greater than 0xff (11111111 in base 2 and 255 in base
-	// 10).
-	i.cc.cy = uint16(i.a) < uint16(n)+uint16(c)
-
-	// Set the auxiliary carry condition bit accordingly if the result of
-	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.a&0x0f)-(n&0x0f)-c >= 0x00
-
-	// Set the parity bit.
-	i.cc.setParity(r)
-
-	// Finally update the accumulator.
-	i.a = r
+	i.accumulatorSub(i.immediateByte(), i.cc.carryByte())
 }

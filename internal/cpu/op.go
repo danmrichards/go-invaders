@@ -1,277 +1,388 @@
 package cpu
 
-// opHandler is a function that handles the instruction for a given opcode.
-//
-// TODO: Handlers should return cycle count.
-type opHandler func()
+import "fmt"
 
-// registerOpHandlers registers the map of opcode handlers.
-func (i *Intel8080) registerOpHandlers() {
-	i.opHandlers = map[byte]opHandler{
-		0x00: i.nop,
-		0x01: i.lxi(&i.b, &i.c),
-		0x02: i.stax(&i.b, &i.c),
-		0x03: i.inx(&i.b, &i.c),
-		0x04: i.inr(&i.b),
-		0x05: i.dcr(&i.b),
-		0x06: i.mvi(&i.b),
-		0x07: i.rlc,
-		0x08: i.ignore,
-		0x09: i.dad(&i.b, &i.c),
-		0x0a: i.ldax(&i.b, &i.c),
-		0x0b: i.dcx(&i.b, &i.c),
-		0x0c: i.inr(&i.c),
-		0x0d: i.dcr(&i.c),
-		0x0e: i.mvi(&i.c),
-		0x0f: i.rrc,
-		0x10: i.ignore,
-		0x11: i.lxi(&i.d, &i.e),
-		0x12: i.stax(&i.d, &i.e),
-		0x13: i.inx(&i.d, &i.e),
-		0x14: i.inr(&i.d),
-		0x15: i.dcr(&i.d),
-		0x16: i.mvi(&i.d),
-		0x17: i.ral,
-		0x18: i.ignore,
-		0x19: i.dad(&i.d, &i.e),
-		0x1a: i.ldax(&i.d, &i.e),
-		0x1b: i.dcx(&i.d, &i.e),
-		0x1c: i.inr(&i.e),
-		0x1d: i.dcr(&i.e),
-		0x1e: i.mvi(&i.e),
-		0x1f: i.rar,
-		0x20: i.ignore,
-		0x21: i.lxi(&i.h, &i.l),
-		0x22: i.shld,
-		0x23: i.inx(&i.h, &i.l),
-		0x24: i.inr(&i.h),
-		0x25: i.dcr(&i.h),
-		0x26: i.mvi(&i.h),
-		0x27: i.daa,
-		0x28: i.ignore,
-		0x29: i.dad(&i.h, &i.l),
-		0x2a: i.lhld,
-		0x2b: i.dcx(&i.h, &i.l),
-		0x2c: i.inr(&i.l),
-		0x2d: i.dcr(&i.l),
-		0x2e: i.mvi(&i.l),
-		0x2f: i.cma,
-		0x30: i.ignore,
-		0x31: i.lxiSP,
-		0x32: i.sta,
-		0x33: i.inxSP,
-		0x34: i.inrM,
-		0x35: i.dcrM,
-		0x36: i.mviM,
-		0x37: i.stc,
-		0x38: i.ignore,
-		0x39: i.dadSP,
-		0x3a: i.lda,
-		0x3b: i.dcxSP,
-		0x3c: i.inr(&i.a),
-		0x3d: i.dcr(&i.a),
-		0x3e: i.mvi(&i.a),
-		0x3f: i.cmc,
-		0x40: i.movRR(&i.b, &i.b),
-		0x41: i.movRR(&i.b, &i.c),
-		0x42: i.movRR(&i.b, &i.d),
-		0x43: i.movRR(&i.b, &i.e),
-		0x44: i.movRR(&i.b, &i.h),
-		0x45: i.movRR(&i.b, &i.l),
-		0x46: i.movMR(&i.b),
-		0x47: i.movRR(&i.b, &i.a),
-		0x48: i.movRR(&i.c, &i.b),
-		0x49: i.movRR(&i.c, &i.c),
-		0x4a: i.movRR(&i.c, &i.d),
-		0x4b: i.movRR(&i.c, &i.e),
-		0x4c: i.movRR(&i.c, &i.h),
-		0x4d: i.movRR(&i.c, &i.l),
-		0x4e: i.movMR(&i.c),
-		0x4f: i.movRR(&i.c, &i.a),
-		0x50: i.movRR(&i.d, &i.b),
-		0x51: i.movRR(&i.d, &i.c),
-		0x52: i.movRR(&i.d, &i.d),
-		0x53: i.movRR(&i.d, &i.e),
-		0x54: i.movRR(&i.d, &i.h),
-		0x55: i.movRR(&i.d, &i.l),
-		0x56: i.movMR(&i.d),
-		0x57: i.movRR(&i.d, &i.a),
-		0x58: i.movRR(&i.e, &i.b),
-		0x59: i.movRR(&i.e, &i.c),
-		0x5a: i.movRR(&i.e, &i.d),
-		0x5b: i.movRR(&i.e, &i.e),
-		0x5c: i.movRR(&i.e, &i.h),
-		0x5d: i.movRR(&i.e, &i.l),
-		0x5e: i.movMR(&i.e),
-		0x5f: i.movRR(&i.e, &i.a),
-		0x60: i.movRR(&i.h, &i.b),
-		0x61: i.movRR(&i.h, &i.c),
-		0x62: i.movRR(&i.h, &i.d),
-		0x63: i.movRR(&i.h, &i.e),
-		0x64: i.movRR(&i.h, &i.h),
-		0x65: i.movRR(&i.h, &i.l),
-		0x66: i.movMR(&i.h),
-		0x67: i.movRR(&i.h, &i.a),
-		0x68: i.movRR(&i.l, &i.b),
-		0x69: i.movRR(&i.l, &i.c),
-		0x6a: i.movRR(&i.l, &i.d),
-		0x6b: i.movRR(&i.l, &i.e),
-		0x6c: i.movRR(&i.l, &i.h),
-		0x6d: i.movRR(&i.l, &i.l),
-		0x6e: i.movMR(&i.l),
-		0x6f: i.movRR(&i.l, &i.a),
-		0x70: i.movRM(&i.b),
-		0x71: i.movRM(&i.c),
-		0x72: i.movRM(&i.d),
-		0x73: i.movRM(&i.e),
-		0x74: i.movRM(&i.h),
-		0x75: i.movRM(&i.l),
-		0x76: i.hlt,
-		0x77: i.movRM(&i.a),
-		0x78: i.movRR(&i.a, &i.b),
-		0x79: i.movRR(&i.a, &i.c),
-		0x7a: i.movRR(&i.a, &i.d),
-		0x7b: i.movRR(&i.a, &i.e),
-		0x7c: i.movRR(&i.a, &i.h),
-		0x7d: i.movRR(&i.a, &i.l),
-		0x7e: i.movMR(&i.a),
-		0x7f: i.movRR(&i.a, &i.a),
-		0x80: i.add(&i.b),
-		0x81: i.add(&i.c),
-		0x82: i.add(&i.d),
-		0x83: i.add(&i.e),
-		0x84: i.add(&i.h),
-		0x85: i.add(&i.l),
-		0x86: i.addM,
-		0x87: i.add(&i.a),
-		0x88: i.adc(&i.b),
-		0x89: i.adc(&i.c),
-		0x8a: i.adc(&i.d),
-		0x8b: i.adc(&i.e),
-		0x8c: i.adc(&i.h),
-		0x8d: i.adc(&i.l),
-		0x8e: i.adcM,
-		0x8f: i.adc(&i.a),
-		0x90: i.sub(&i.b),
-		0x91: i.sub(&i.c),
-		0x92: i.sub(&i.d),
-		0x93: i.sub(&i.e),
-		0x94: i.sub(&i.h),
-		0x95: i.sub(&i.l),
-		0x96: i.subM,
-		0x97: i.sub(&i.a),
-		0x98: i.sbb(&i.b),
-		0x99: i.sbb(&i.c),
-		0x9a: i.sbb(&i.d),
-		0x9b: i.sbb(&i.e),
-		0x9c: i.sbb(&i.h),
-		0x9d: i.sbb(&i.l),
-		0x9e: i.sbbM,
-		0x9f: i.sbb(&i.a),
-		0xa0: i.ana(&i.b),
-		0xa1: i.ana(&i.c),
-		0xa2: i.ana(&i.d),
-		0xa3: i.ana(&i.e),
-		0xa4: i.ana(&i.h),
-		0xa5: i.ana(&i.l),
-		0xa6: i.anaM,
-		0xa7: i.ana(&i.a),
-		0xa8: i.xra(&i.b),
-		0xa9: i.xra(&i.c),
-		0xaa: i.xra(&i.d),
-		0xab: i.xra(&i.e),
-		0xac: i.xra(&i.h),
-		0xad: i.xra(&i.l),
-		0xae: i.xraM,
-		0xaf: i.xra(&i.a),
-		0xb0: i.ora(&i.b),
-		0xb1: i.ora(&i.c),
-		0xb2: i.ora(&i.d),
-		0xb3: i.ora(&i.e),
-		0xb4: i.ora(&i.h),
-		0xb5: i.ora(&i.l),
-		0xb6: i.oraM,
-		0xb7: i.ora(&i.a),
-		0xb8: i.cmp(&i.b),
-		0xb9: i.cmp(&i.c),
-		0xba: i.cmp(&i.d),
-		0xbb: i.cmp(&i.e),
-		0xbc: i.cmp(&i.h),
-		0xbd: i.cmp(&i.l),
-		0xbe: i.cmpM,
-		0xbf: i.cmp(&i.a),
-		0xc0: i.rnz,
-		0xc1: i.pop(&i.b, &i.c),
-		0xc2: i.jnz,
-		0xc3: i.jmp,
-		0xc4: i.cnz,
-		0xc5: i.push(&i.b, &i.c),
-		0xc6: i.adi,
-		0xc7: i.rst(0xc7),
-		0xc8: i.rz,
-		0xc9: i.ret,
-		0xca: i.jz,
-		0xcb: i.ignore,
-		0xcc: i.cz,
-		0xcd: i.call,
-		0xce: i.aci,
-		0xcf: i.rst(0xcf),
-		0xd0: i.rnc,
-		0xd1: i.pop(&i.d, &i.e),
-		0xd2: i.jnc,
-		0xd3: i.out,
-		0xd4: i.cnc,
-		0xd5: i.push(&i.d, &i.e),
-		0xd6: i.sui,
-		0xd7: i.rst(0xd7),
-		0xd8: i.rc,
-		0xd9: i.ignore,
-		0xda: i.jc,
-		0xdb: i.in,
-		0xdc: i.cic,
-		0xdd: i.ignore,
-		0xde: i.sbi,
-		0xdf: i.rst(0xdf),
-		0xe0: i.rpo,
-		0xe1: i.pop(&i.h, &i.l),
-		0xe2: i.jpo,
-		0xe3: i.xthl,
-		0xe4: i.cpo,
-		0xe5: i.push(&i.h, &i.l),
-		0xe6: i.ani,
-		0xe7: i.rst(0xe7),
-		0xe8: i.rpe,
-		0xe9: i.pchl,
-		0xea: i.jpe,
-		0xeb: i.xchg,
-		0xec: i.cpe,
-		0xed: i.ignore,
-		0xee: i.xri,
-		0xef: i.rst(0xef),
-		0xf0: i.rp,
-		0xf1: i.popPSW,
-		0xf2: i.jp,
-		0xf3: i.di,
-		0xf4: i.cp,
-		0xf5: i.pushPSW,
-		0xf6: i.ori,
-		0xf7: i.rst(0xf7),
-		0xf8: i.rm,
-		0xf9: i.sphl,
-		0xfa: i.jm,
-		0xfb: i.ei,
-		0xfc: i.cm,
-		0xfd: i.ignore,
-		0xfe: i.cpi,
-		0xff: i.rst(0xff),
+// handleOp dispatches the appropriate handler for the given opcode.
+func (i *Intel8080) handleOp(opc byte) error {
+	switch opc {
+	case 0x00, 0x10, 0x20, 0x30, 0x08, 0x18, 0x28, 0x38:
+		// NOP and ignore opcodes.
+
+	case 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
+		0x4d, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x57, 0x58, 0x59, 0x5a,
+		0x5b, 0x5c, 0x5d, 0x5f, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x67, 0x68,
+		0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6f, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d,
+		0x7f:
+		i.movRR(opc)
+
+	case 0x46, 0x4e, 0x56, 0x5e, 0x66, 0x6e, 0x7e:
+		i.movMR(opc)
+
+	case 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x77:
+		i.movRM(opc)
+
+	case 0x3e, 0x06, 0x0e, 0x16, 0x1e, 0x26, 0x2e:
+		i.mvi(opc)
+
+	case 0x36:
+		i.mviM()
+
+	case 0x0a:
+		i.ldax(i.bc())
+
+	case 0x1a:
+		i.ldax(i.de())
+
+	case 0x3a:
+		i.ldax(i.immediateWord())
+
+	case 0x02:
+		i.stax(i.bc())
+
+	case 0x12:
+		i.stax(i.de())
+
+	case 0x32:
+		i.stax(i.immediateWord())
+
+	case 0x01:
+		// LXI B, W
+		i.setBC(i.immediateWord())
+
+	case 0x11:
+		// LXI D, W
+		i.setDE(i.immediateWord())
+
+	case 0x21:
+		// LXI H, W
+		i.setHL(i.immediateWord())
+
+	case 0x31:
+		// LXI SP, W
+		i.sp = i.immediateWord()
+
+	case 0x2a:
+		i.lhld()
+
+	case 0x22:
+		i.shld()
+
+	case 0xf9:
+		i.sphl()
+
+	case 0xeb:
+		i.xchg()
+
+	case 0xe3:
+		i.xthl()
+
+	case 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x87:
+		i.add(i.opcRegVal(opc))
+
+	case 0x86:
+		i.addM()
+
+	case 0xc6:
+		i.adi()
+
+	case 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8f:
+		i.adc(i.opcRegVal(opc))
+
+	case 0x8e:
+		i.adcM()
+
+	case 0xce:
+		i.aci()
+
+	case 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97:
+		i.sub(i.opcRegVal(opc))
+
+	case 0x96:
+		i.sub(i.mem.Read(i.hl()))
+
+	case 0xd6:
+		i.sui()
+
+	case 0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9f:
+		i.sbb(i.opcRegVal(opc))
+
+	case 0x9e:
+		i.sbbM()
+
+	case 0xde:
+		i.sbi()
+
+	case 0x09:
+		i.dad(i.bc())
+
+	case 0x19:
+		i.dad(i.de())
+
+	case 0x29:
+		i.dad(i.hl())
+
+	case 0x39:
+		i.dadSP()
+
+	case 0xf3:
+		i.di()
+
+	case 0xfb:
+		i.ei()
+
+	case 0x76:
+		i.hlt()
+
+	case 0x4, 0xc, 0x14, 0x1c, 0x24, 0x2c, 0x3c:
+		d := (opc >> 3) & 0x7
+		i.R[d] = i.inr(i.R[d])
+
+	case 0x34:
+		i.inrM()
+
+	case 0x05, 0x0d, 0x15, 0x1d, 0x25, 0x2d, 0x3d:
+		d := (opc >> 3) & 0x7
+		i.R[d] = i.dcr(i.R[d])
+
+	case 0x35:
+		i.dcrM()
+
+	case 0x03:
+		// INX B
+		i.setBC(i.bc() + 1)
+
+	case 0x13:
+		// INX D
+		i.setDE(i.de() + 1)
+
+	case 0x23:
+		// INX H
+		i.setHL(i.hl() + 1)
+
+	case 0x33:
+		// INX SP
+		i.inxSP()
+
+	case 0x0b:
+		// DCX B
+		i.setBC(i.bc() - 1)
+
+	case 0x1b:
+		// DCX D
+		i.setDE(i.de() - 1)
+
+	case 0x2b:
+		// DCX H
+		i.setHL(i.hl() - 1)
+
+	case 0x3b:
+		// DCX SP
+		i.dcxSP()
+
+	case 0x27:
+		i.daa()
+
+	case 0x2f:
+		i.cma()
+
+	case 0x37:
+		i.stc()
+
+	case 0x3f:
+		i.cmc()
+
+	case 0x07:
+		i.rlc()
+
+	case 0x0f:
+		i.rrc()
+
+	case 0x17:
+		i.ral()
+
+	case 0x1f:
+		i.rar()
+
+	case 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa7:
+		// ANA R
+		d := opc & 0x7
+		i.ana(i.R[d])
+
+	case 0xa6:
+		// ANA M
+		i.ana(i.mem.Read(i.hl()))
+
+	case 0xe6:
+		// ANI
+		i.ana(i.immediateByte())
+
+	case 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xaf:
+		// XRA R
+		d := opc & 0x7
+		i.xra(i.R[d])
+
+	case 0xae:
+		// XRA M
+		i.xra(i.mem.Read(i.hl()))
+
+	case 0xee:
+		i.xra(i.immediateByte())
+
+	case 0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb7:
+		// ORA R
+		d := opc & 0x7
+		i.ora(i.R[d])
+
+	case 0xb6:
+		// ORA M
+		i.ora(i.mem.Read(i.hl()))
+
+	case 0xf6:
+		// ORI
+		i.ora(i.immediateByte())
+
+	case 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbf:
+		// CMP R
+		d := opc & 0x7
+		i.cmp(i.R[d])
+
+	case 0xbe:
+		// CMP M
+		i.cmp(i.mem.Read(i.hl()))
+
+	case 0xfe:
+		// CPI
+		i.cmp(i.immediateByte())
+
+	case 0xc3:
+		i.jmp()
+
+	case 0xc2:
+		i.jnz()
+
+	case 0xca:
+		i.jz()
+
+	case 0xd2:
+		i.jnc()
+
+	case 0xda:
+		i.jc()
+
+	case 0xe2:
+		i.jpo()
+
+	case 0xea:
+		i.jpe()
+
+	case 0xf2:
+		i.jp()
+
+	case 0xfa:
+		i.jm()
+
+	case 0xe9:
+		i.pchl()
+
+	case 0xcd:
+		i.call()
+
+	case 0xc4:
+		i.cnz()
+
+	case 0xcc:
+		i.cz()
+
+	case 0xd4:
+		i.cnc()
+
+	case 0xdc:
+		i.cic()
+
+	case 0xe4:
+		i.cpo()
+
+	case 0xec:
+		i.cpe()
+
+	case 0xf4:
+		i.cp()
+
+	case 0xfc:
+		i.cm()
+
+	case 0xc9, 0xd9:
+		i.ret()
+
+	case 0xc0:
+		i.rnz()
+
+	case 0xc8:
+		i.rz()
+
+	case 0xd0:
+		i.rnc()
+
+	case 0xd8:
+		i.rc()
+
+	case 0xe0:
+		i.rpo()
+
+	case 0xe8:
+		i.rpe()
+
+	case 0xf0:
+		i.rp()
+	case 0xf8:
+		i.rm()
+
+	case 0xc7, 0xcf, 0xd7, 0xdf, 0xe7, 0xef, 0xf7, 0xff:
+		i.rst(opc)
+
+	case 0xc5:
+		// PUSH B
+		i.stackAdd(i.bc())
+
+	case 0xd5:
+		// PUSH D
+		i.stackAdd(i.de())
+
+	case 0xe5:
+		// PUSH H
+		i.stackAdd(i.hl())
+
+	case 0xf5:
+		// PUSH PSW
+		i.pushPSW()
+
+	case 0xc1:
+		// POP B
+		i.setBC(i.stackPop())
+
+	case 0xd1:
+		// POP D
+		i.setDE(i.stackPop())
+
+	case 0xe1:
+		// POP H
+		i.setHL(i.stackPop())
+
+	case 0xf1:
+		// POP PSW
+		i.popPSW()
+
+	case 0xdb:
+		i.in()
+
+	case 0xd3:
+		i.out()
+
+	default:
+		return fmt.Errorf(
+			"unsupported opcode 0x%02x at program counter %04x", opc, i.pc,
+		)
 	}
+
+	return nil
 }
-
-// nop is a no-op and just returns the default instruction length.
-func (i *Intel8080) nop() {}
-
-// ignore is an instruction that is completely ignored and returns the default
-// instruction length.
-//
-// Similar to a no-op but the Intel 8080 data book defines it differently.
-func (i *Intel8080) ignore() {}

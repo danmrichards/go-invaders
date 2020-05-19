@@ -19,8 +19,10 @@ func TestCPU(t *testing.T) {
 	testHarness(t, filepath.Join("testdata", "TST8080.COM"))
 	fmt.Println()
 
-	//testHarness(t, filepath.Join("testdata", "CPUTEST.COM"))
-	//testHarness(t, filepath.Join("testdata", "8080EXM.COM"))
+	testHarness(t, filepath.Join("testdata", "CPUTEST.COM"))
+	fmt.Println()
+
+	testHarness(t, filepath.Join("testdata", "8080EXM.COM"))
 }
 
 func testHarness(t *testing.T, rom string) {
@@ -72,8 +74,8 @@ func testHarness(t *testing.T, rom string) {
 		//
 		// See: https://en.wikipedia.org/wiki/CP/M
 		if i80.pc == 0x05 {
-			if i80.c == 0x09 {
-				addr := uint16(i80.d)<<8 | uint16(i80.e)
+			if i80.R[C] == 0x09 {
+				addr := uint16(i80.R[D])<<8 | uint16(i80.R[E])
 
 				for {
 					c := mem.Read(addr)
@@ -87,8 +89,8 @@ func testHarness(t *testing.T, rom string) {
 					fmt.Printf("%c", c)
 				}
 			}
-			if i80.c == 0x02 {
-				fmt.Printf("%c", i80.e)
+			if i80.R[C] == 0x02 {
+				fmt.Printf("%c", i80.R[E])
 			}
 		}
 

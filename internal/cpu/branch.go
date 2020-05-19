@@ -367,12 +367,7 @@ func (i *Intel8080) rm() {
 // This causes program execution to continue at the address contained in the H
 // and L registers.
 func (i *Intel8080) pchl() {
-	// Determine the address of the byte pointed by the HL register pair.
-	// The address is two bytes long, so merge the two bytes stored in each
-	// side of the register pair.
-	addr := uint16(i.h)<<8 | uint16(i.l)
-
-	i.pc = addr
+	i.pc = i.hl()
 }
 
 // rst is the "Restart" handler.
@@ -381,10 +376,8 @@ func (i *Intel8080) pchl() {
 // return address for later use by a RETURN instruction.
 //
 // The program execution continues at an address indicated by opc.
-func (i *Intel8080) rst(opc byte) opHandler {
-	return func() {
-		i.stackAdd(i.pc)
+func (i *Intel8080) rst(opc byte) {
+	i.stackAdd(i.pc)
 
-		i.pc = uint16(opc) & 0x38
-	}
+	i.pc = uint16(opc) & 0x38
 }

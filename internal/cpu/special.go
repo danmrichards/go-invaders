@@ -12,6 +12,7 @@ func (i *Intel8080) di() {
 
 // hlt is the "Halt" handler.
 func (i *Intel8080) hlt() {
+	i.pc--
 	i.halted = true
 }
 
