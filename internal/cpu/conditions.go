@@ -30,17 +30,6 @@ type conditions struct {
 	p bool
 }
 
-// newConditions returns an initialised set of CPU conditions.
-func newConditions() *conditions {
-	return &conditions{
-		z:  true,
-		s:  true,
-		p:  true,
-		cy: false,
-		ac: true,
-	}
-}
-
 // setParity sets the parity bit based upon the number of set bits in byte b.
 func (c *conditions) setParity(b byte) {
 	var n int
