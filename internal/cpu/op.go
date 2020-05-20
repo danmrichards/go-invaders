@@ -98,7 +98,7 @@ func (i *Intel8080) handleOp(opc byte) error {
 		i.sub(i.opcRegVal(opc))
 
 	case 0x96:
-		i.sub(i.mem.Read(i.hl()))
+		i.subM()
 
 	case 0xd6:
 		i.sui()

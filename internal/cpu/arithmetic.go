@@ -212,7 +212,7 @@ func (i *Intel8080) sub(n byte) {
 // The byte pointed to by the HL register pair is subtracted from the contents
 // of the accumulator and relevant condition bits are set.
 func (i *Intel8080) subM() {
-	i.accumulatorSub(i.mem.Read(i.hl()), 0)
+	i.sub(i.mem.Read(i.hl()))
 }
 
 // sbb is the "Subtract Register from Accumulator With Borrow" handler.
