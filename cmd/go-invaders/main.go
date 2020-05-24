@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/danmrichards/go-invaders/internal/cpu"
+	"github.com/faiface/pixel/pixelgl"
+
 	"github.com/danmrichards/go-invaders/internal/machine"
 	"github.com/danmrichards/go-invaders/internal/memory"
 )
@@ -28,28 +26,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Instantiate the Intel 8080.
-	var opts []cpu.Option
+	var opts []machine.Option
 	if debug {
-		opts = append(opts, cpu.WithDebugEnabled())
+		opts = append(opts, machine.WithDebugEnabled())
 	}
-	i80 := cpu.NewIntel8080(mem, opts...)
-
-	done := make(chan struct{})
 
 	// Instantiate the Space Invaders machine.
-	m := machine.New(i80, mem, done)
+	m := machine.New(mem, opts...)
 
-	// Basic shutdown handler.
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		close(done)
-	}()
-
-	// Run the machine until it errors or we shutdown.
-	if err := m.Run(); err != nil {
-		log.Fatal(err)
-	}
+	pixelgl.Run(m.Run)
 }

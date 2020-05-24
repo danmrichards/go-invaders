@@ -4,40 +4,51 @@ import (
 	"fmt"
 
 	"github.com/danmrichards/disassemble8080/pkg/dasm"
-	"github.com/danmrichards/go-invaders/internal/memory"
 )
 
 // TODO: Abstract this to a separate repo and package.
 
-// Intel8080 represents the Intel 8080 CPU.
-type Intel8080 struct {
-	// Registers including working "scratchpads" and the accumulator.
-	R [8]byte
+type (
+	// Intel8080 represents the Intel 8080 CPU.
+	Intel8080 struct {
+		// Registers including working "scratchpads" and the accumulator.
+		R [8]byte
 
-	// Stack pointer, stores address of last program request in the stack.
-	sp uint16
+		// Stack pointer, stores address of last program request in the stack.
+		sp uint16
 
-	// Program counter, stores the address of the instruction being executed.
-	pc uint16
+		// Program counter, stores the address of the instruction being executed.
+		pc uint16
 
-	// Conditions represents the condition bits of the CPU.
-	cc *conditions
+		// Conditions represents the condition bits of the CPU.
+		cc *conditions
 
-	// Interrupts enabled.
-	ie bool
+		// Interrupts enabled.
+		ie bool
 
-	// Has the CPU been halted?
-	halted bool
+		// Has the CPU been halted?
+		halted bool
 
-	// Provides an interface to enable reads and writes to memory.
-	mem memory.ReadWriteDumper
+		// Provides an interface to enable reads and writes to memory.
+		mem MemReadWriter
 
-	// If set to true the emulation cycle will print debug information.
-	debug bool
-}
+		// Input (i.e. keyboard) handler function.
+		ih ifn
 
-// Option is a functional option that modifies a field on the machine.
-type Option func(*Intel8080)
+		// Output (i.e. sound) handler function.
+		oh ofn
+
+		// If set to true the emulation cycle will print debug information.
+		debug bool
+	}
+
+	// Option is a functional option that modifies a field on the CPU.
+	Option func(*Intel8080)
+
+	// Input/Ouput handlers.
+	ifn func(byte)
+	ofn func(byte)
+)
 
 // WithDebugEnabled enables debug mode on the machine.
 func WithDebugEnabled() Option {
@@ -47,10 +58,12 @@ func WithDebugEnabled() Option {
 }
 
 // NewIntel8080 returns an instantiated Intel 8080.
-func NewIntel8080(mem memory.ReadWriteDumper, opts ...Option) *Intel8080 {
+func NewIntel8080(mem MemReadWriter, in ifn, out ofn, opts ...Option) *Intel8080 {
 	i := &Intel8080{
 		cc:  &conditions{},
 		mem: mem,
+		ih:  in,
+		oh:  out,
 	}
 
 	for _, o := range opts {
