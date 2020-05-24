@@ -52,11 +52,14 @@ func New(mem cpu.MemReadWriter, opts ...Option) *Machine {
 	}
 
 	// Instantiate the CPU.
-	var copts []cpu.Option
+	copts := []cpu.Option{
+		cpu.WithInput(m.input),
+		cpu.WithOutput(m.output),
+	}
 	if m.debug {
 		copts = append(copts, cpu.WithDebugEnabled())
 	}
-	m.c = cpu.NewIntel8080(mem, m.input, m.output, copts...)
+	m.c = cpu.NewIntel8080(mem, copts...)
 
 	return m
 }

@@ -57,13 +57,25 @@ func WithDebugEnabled() Option {
 	}
 }
 
+// WithInput sets input as the input handler function.
+func WithInput(input ifn) Option {
+	return func(i *Intel8080) {
+		i.ih = input
+	}
+}
+
+// WithOutput sets output as the output handler function.
+func WithOutput(output ofn) Option {
+	return func(i *Intel8080) {
+		i.oh = output
+	}
+}
+
 // NewIntel8080 returns an instantiated Intel 8080.
-func NewIntel8080(mem MemReadWriter, in ifn, out ofn, opts ...Option) *Intel8080 {
+func NewIntel8080(mem MemReadWriter, opts ...Option) *Intel8080 {
 	i := &Intel8080{
 		cc:  &conditions{},
 		mem: mem,
-		ih:  in,
-		oh:  out,
 	}
 
 	for _, o := range opts {
