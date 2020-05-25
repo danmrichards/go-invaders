@@ -89,3 +89,4 @@ $RECYCLE.BIN/
 roms
 bin
 internal/cpu/testdata/*
+!internal/cpu/testdata/generate.go

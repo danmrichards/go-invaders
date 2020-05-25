@@ -19,6 +19,7 @@ To build from source on Windows run this command:
 ```bash
 go build -ldflags="-s -w" -o bin/go-invaders-windows-amd64.exe ./cmd/go-invaders
 ```
+> Swap out `amd64` for the relevant architecture. See `go env GOARCH`
 
 ## Installation
 ```bash
