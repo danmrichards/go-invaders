@@ -10,7 +10,7 @@ import (
 
 const (
 	// Screen dimensions. The native Space Invaders resolution is 224x256, but
-	// we're also adding a scaler factor to allow rendering at a higher
+	// we're also adding a scale factor to allow rendering at a higher
 	// resolution on modern displays.
 	screenW, screenH = 224, 256
 
