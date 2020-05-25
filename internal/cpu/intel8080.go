@@ -166,6 +166,11 @@ func (i *Intel8080) Accumulator() byte {
 	return i.r[A]
 }
 
+// Running returns true if the CPU is running.
+func (i *Intel8080) Running() bool {
+	return !i.halted
+}
+
 // immediateByte returns the next byte from memory indicated by the program
 // counter.
 //

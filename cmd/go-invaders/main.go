@@ -10,13 +10,15 @@ import (
 )
 
 var (
-	dir   string
-	debug bool
+	dir         string
+	debug       bool
+	scaleFactor int
 )
 
 func main() {
 	flag.StringVar(&dir, "dir", "roms", "Path to directory containing ROM files")
 	flag.BoolVar(&debug, "debug", false, "Run the emulator in debug mode")
+	flag.IntVar(&scaleFactor, "scale-factor", 2, "Scales the original video resolution (224x256)")
 	flag.Parse()
 
 	// Instantiate 64K of memory.
@@ -25,7 +27,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var opts []machine.Option
+	opts := []machine.Option{
+		machine.WithScaleFactor(scaleFactor),
+	}
 	if debug {
 		opts = append(opts, machine.WithDebugEnabled())
 	}

@@ -1,14 +1,10 @@
 package machine
 
 import (
-	"fmt"
-	"image/color"
 	"log"
-	"time"
 
 	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 )
 
@@ -16,10 +12,7 @@ const (
 	// Screen dimensions. The native Space Invaders resolution is 224x256, but
 	// we're also adding a scaler factor to allow rendering at a higher
 	// resolution on modern displays.
-	//
-	// TODO: Make scale factor configurable.
 	screenW, screenH = 224, 256
-	scaleFactor      = 3
 
 	// The original Space Invaders machine ran at a clock speed of 2MHz. The
 	// screen refreshed at a rate of 60Hz. Make some rough calculations at how
@@ -53,6 +46,9 @@ type (
 		// The address of the next interrupt to send to the CPU.
 		ni uint16
 
+		// The video scale factor.
+		sf int
+
 		// Flag for debug mode.
 		debug bool
 	}
@@ -65,6 +61,13 @@ type (
 func WithDebugEnabled() Option {
 	return func(m *Machine) {
 		m.debug = true
+	}
+}
+
+// WithScaleFactor sets the video scale factor.
+func WithScaleFactor(sf int) Option {
+	return func(m *Machine) {
+		m.sf = sf
 	}
 }
 
@@ -97,27 +100,20 @@ func (m *Machine) Run() {
 	var err error
 	m.w, err = pixelgl.NewWindow(pixelgl.WindowConfig{
 		Title:  "Space Invaders",
-		Bounds: pixel.R(0, 0, screenW*scaleFactor, screenH*scaleFactor),
+		Bounds: pixel.R(0, 0, screenW*float64(m.sf), screenH*float64(m.sf)),
 		VSync:  true,
 	})
 	if err != nil {
 		log.Fatalf("create window: %v", err)
 	}
 
-	start := time.Now()
-
 	// TODO: Implement keyboard input.
 
-	// TODO: Also check for halted here.
-	for !m.w.Closed() {
-		dt := time.Since(start)
-		time.Now()
-		if float64(dt.Milliseconds()) > (1/float64(60))*1000 {
-			if err := m.step(); err != nil {
-				log.Fatalf("step: %w\n", err)
-			}
-			m.render()
+	for !m.w.Closed() && m.c.Running() {
+		if err := m.step(); err != nil {
+			log.Fatalf("step: %v\n", err)
 		}
+		m.render()
 	}
 }
 
@@ -161,85 +157,4 @@ func (m *Machine) step() error {
 	}
 
 	return nil
-}
-
-// render renders the current screen to the window.
-func (m *Machine) render() {
-	// Prepare the drawing object.
-	imd := imdraw.New(nil)
-	imd.Color = color.White
-
-	// Draw the screen.
-	m.draw(imd)
-
-	// Update the window.
-	imd.Draw(m.w)
-	m.w.Update()
-
-	// Clear the screen, ready for the next frame.
-	m.w.Clear(color.Black)
-}
-
-// draw draws the current screen onto the given draw object.
-//
-// The screen is drawn by iterating over the range of memory between the VRAM
-// start address and the start address plus 256*224 bytes. Each byte in this
-// range represents 8 pixels.
-func (m *Machine) draw(imd *imdraw.IMDraw) {
-	var (
-		bit  uint = 0
-		vb   uint8
-		addr = vramStart
-	)
-	for x := 0; x < screenW; x++ {
-		for y := 0; y < screenH; y++ {
-			// Read the next VRAM byte.
-			if bit == 0 {
-				vb = m.m.Read(addr)
-				addr++
-			}
-
-			// Check if the pixel is lit.
-			if (vb>>bit)&0x01 != 0x00 {
-				m.pixel(imd, x, y)
-			}
-
-			// Move on to the next bit.
-			bit++
-
-			// Last bit, move on to the next byte.
-			if bit == 8 {
-				bit = 0
-			}
-		}
-	}
-}
-
-// pixel draws a pixel to the draw object at the give co-ordinates.
-//
-// The pixel is scaled to a size determined by the scale factor.
-func (m *Machine) pixel(imd *imdraw.IMDraw, x, y int) {
-	x1 := float64(x * scaleFactor)
-	y1 := float64(y * scaleFactor)
-	imd.Push(
-		pixel.V(x1, y1),
-		pixel.V(x1+scaleFactor, y1+scaleFactor),
-	)
-	imd.Rectangle(0)
-}
-
-func (m *Machine) input(b byte) {
-	if m.debug {
-		fmt.Printf("IN: %02x\n", b)
-	}
-
-	// TODO: Input handler
-}
-
-func (m *Machine) output(b byte) {
-	if m.debug {
-		fmt.Printf("OUT: %02x\n", b)
-	}
-
-	// TODO: Output handler
 }
