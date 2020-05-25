@@ -81,7 +81,7 @@ func (i *Intel8080) rlc() {
 // the low-order bit being transferred to the high-order bit position of the
 // accumulator.
 func (i *Intel8080) rrc() {
-	i.cc.cy = i.r[A]&0x1 != 0
+	i.cc.cy = i.r[A]&0x01 != 0
 	i.r[A] >>= 1
 	if i.cc.cy {
 		i.r[A] |= 0x80
@@ -111,7 +111,7 @@ func (i *Intel8080) ral() {
 // bit replaces the high-order bit of the accumulator.
 func (i *Intel8080) rar() {
 	cy := i.cc.cy
-	i.cc.cy = i.r[A]&0x1 != 0
+	i.cc.cy = i.r[A]&0x01 != 0
 	i.r[A] >>= 1
 	if cy {
 		i.r[A] |= 0x80

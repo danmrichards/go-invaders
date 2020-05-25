@@ -8,12 +8,6 @@ import (
 
 // TODO: Abstract this to a separate repo and package.
 
-const (
-	clock    = 2000000
-	stepTime = 16
-	cycles   = uint32(float64(stepTime) / (float64(1000) / float64(clock)))
-)
-
 var (
 	//  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
 	opCycles = [256]uint32{
@@ -149,6 +143,29 @@ func (i *Intel8080) Step() error {
 	return i.handleOp(opc)
 }
 
+// Interrupt sets the interrupt address which will be handled on the next
+// step.
+func (i *Intel8080) Interrupt(addr uint16) {
+	if !i.ie {
+		return
+	}
+
+	i.ie = false
+	i.stackAdd(i.pc)
+	i.pc = addr
+	i.cyc += opCycles[0xcd]
+}
+
+// Cycles returns the current cycle count.
+func (i *Intel8080) Cycles() uint32 {
+	return i.cyc
+}
+
+// Accumulator returns the current state of the accumulator.
+func (i *Intel8080) Accumulator() byte {
+	return i.r[A]
+}
+
 // immediateByte returns the next byte from memory indicated by the program
 // counter.
 //
@@ -255,25 +272,4 @@ func (i *Intel8080) stackPop() uint16 {
 	i.sp += 2
 
 	return n
-}
-
-// Interrupt jumps the CPU to the given address if interrupts are enabled.
-func (i *Intel8080) Interrupt(addr uint16) {
-	if i.ie {
-		i.ie = false
-
-		i.stackAdd(i.pc)
-		i.pc = addr
-		i.cyc += opCycles[0xcd]
-	}
-}
-
-// Cycles returns the current cycle count.
-func (i *Intel8080) Cycles() uint32 {
-	return i.cyc
-}
-
-// Accumulator returns the current state of the accumulator.
-func (i *Intel8080) Accumulator() byte {
-	return i.r[A]
 }

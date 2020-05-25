@@ -17,7 +17,7 @@ $ make
 #### Windows
 To build from source on Windows run this command: 
 ```bash
-go build -ldflags="-s -w" -o bin/go-invaders-windows-amd64.exe ./cmd/go-invaders/main.go
+go build -ldflags="-s -w" -o bin/go-invaders-windows-amd64.exe ./cmd/go-invaders
 ```
 
 ## Installation

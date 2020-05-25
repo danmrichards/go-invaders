@@ -4,10 +4,9 @@ import (
 	"flag"
 	"log"
 
-	"github.com/faiface/pixel/pixelgl"
-
 	"github.com/danmrichards/go-invaders/internal/machine"
 	"github.com/danmrichards/go-invaders/internal/memory"
+	"github.com/faiface/pixel/pixelgl"
 )
 
 var (

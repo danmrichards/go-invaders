@@ -36,7 +36,7 @@ func (c *conditions) setParity(b byte) {
 
 	// Iterate through the bits in the given byte and count how many are set.
 	for i := 0; i < 8; i++ {
-		if (b>>i)&0x1 == 1 {
+		if (b>>i)&0x01 == 1 {
 			n++
 		}
 	}
@@ -78,7 +78,7 @@ func (c *conditions) setStatus(b byte) {
 	c.z = (b >> 6 & 0x01) == 0x01
 	c.ac = (b >> 4 & 0x01) == 0x01
 	c.p = (b >> 2 & 0x01) == 0x01
-	c.cy = (b & 0x1) == 0x1
+	c.cy = (b & 0x01) == 0x01
 }
 
 // carryByte returns a byte representation of the carry flag.

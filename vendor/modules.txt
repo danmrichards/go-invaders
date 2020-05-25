@@ -8,6 +8,7 @@ github.com/faiface/mainthread
 # github.com/faiface/pixel v0.9.0
 ## explicit
 github.com/faiface/pixel
+github.com/faiface/pixel/imdraw
 github.com/faiface/pixel/pixelgl
 # github.com/go-gl/gl v0.0.0-20190320180904-bf2b1f2f34d7
 github.com/go-gl/gl/v3.3-core/gl
