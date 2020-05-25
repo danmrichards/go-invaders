@@ -32,32 +32,17 @@ func (b Basic) LoadROM(dir string) error {
 		return err
 	}
 
-	if err := b.loadROMPart(dir, "invaders.h"); err != nil {
-		return err
-	}
-	if err := b.loadROMPart(dir, "invaders.g"); err != nil {
-		return err
-	}
-	if err := b.loadROMPart(dir, "invaders.f"); err != nil {
-		return err
-	}
-	if err := b.loadROMPart(dir, "invaders.e"); err != nil {
-		return err
+	for rom, offset := range romOffsets {
+		if err := b.loadROMPart(dir, rom, offset); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (b Basic) loadROMPart(dir, part string) error {
+func (b Basic) loadROMPart(dir, part string, offset uint32) error {
 	path := filepath.Join(dir, part)
-
-	// Get the correct memory offset for this ROM part.
-	offset, ok := romOffsets[part]
-	if !ok {
-		return fmt.Errorf(
-			"could not determine ROM offset: unknown part: %q", part,
-		)
-	}
 
 	rf, err := os.Open(path)
 	if err != nil {

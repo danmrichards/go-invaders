@@ -38,7 +38,7 @@ type (
 		// $4000 -> RAM mirror
 		//
 		// For more details on the ROM structure see LoadROM.
-		m cpu.MemReadWriter
+		mem cpu.MemReadWriter
 
 		// The render window.
 		w *pixelgl.Window
@@ -74,8 +74,8 @@ func WithScaleFactor(sf int) Option {
 // New returns an instantiated Space Invaders machine.
 func New(mem cpu.MemReadWriter, opts ...Option) *Machine {
 	m := &Machine{
-		m:  mem,
-		ni: 0x08,
+		mem: mem,
+		ni:  0x08,
 	}
 
 	for _, o := range opts {
@@ -125,7 +125,7 @@ func (m *Machine) Run() {
 // send the second interrupt (RST 10).
 func (m *Machine) step() error {
 	// Work out how many CPU cycles to run in half a frame. This will
-	// synchronise the emulation process with the rendering process in m.render.
+	// synchronise the emulation process with the rendering process in mem.render.
 	hfc := cyclesPerFrame / 2
 
 	// Run the cycles for the first half of the frame, recording the delta in

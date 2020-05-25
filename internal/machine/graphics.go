@@ -39,7 +39,7 @@ func (m *Machine) draw(imd *imdraw.IMDraw) {
 		for y := 0; y < screenH; y++ {
 			// Read the next VRAM byte.
 			if bit == 0 {
-				vb = m.m.Read(addr)
+				vb = m.mem.Read(addr)
 				addr++
 			}
 
