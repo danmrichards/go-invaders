@@ -7,7 +7,7 @@ package cpu
 func (i *Intel8080) popPSW() {
 	n := i.stackPop()
 
-	i.R[A] = uint8(n >> 8)
+	i.r[A] = uint8(n >> 8)
 	i.cc.setStatus(uint8(n & 0xff))
 }
 
@@ -16,7 +16,7 @@ func (i *Intel8080) popPSW() {
 // The contents of the PSW register pair are saved in two bytes of memory
 // indicated by the stack pointer SP.
 func (i *Intel8080) pushPSW() {
-	i.stackAdd(uint16(i.R[A])<<8 | uint16(i.cc.status()))
+	i.stackAdd(uint16(i.r[A])<<8 | uint16(i.cc.status()))
 }
 
 // xthl is the "Exchange Stack" handler.

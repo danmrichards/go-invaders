@@ -74,8 +74,8 @@ func testHarness(t *testing.T, rom string) {
 		//
 		// See: https://en.wikipedia.org/wiki/CP/M
 		if i80.pc == 0x05 {
-			if i80.R[C] == 0x09 {
-				addr := uint16(i80.R[D])<<8 | uint16(i80.R[E])
+			if i80.r[C] == 0x09 {
+				addr := uint16(i80.r[D])<<8 | uint16(i80.r[E])
 
 				for {
 					c := mem.Read(addr)
@@ -89,8 +89,8 @@ func testHarness(t *testing.T, rom string) {
 					fmt.Printf("%c", c)
 				}
 			}
-			if i80.R[C] == 0x02 {
-				fmt.Printf("%c", i80.R[E])
+			if i80.r[C] == 0x02 {
+				fmt.Printf("%c", i80.r[E])
 			}
 		}
 

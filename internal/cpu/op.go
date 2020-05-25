@@ -135,14 +135,14 @@ func (i *Intel8080) handleOp(opc byte) error {
 
 	case 0x4, 0xc, 0x14, 0x1c, 0x24, 0x2c, 0x3c:
 		d := (opc >> 3) & 0x7
-		i.R[d] = i.inr(i.R[d])
+		i.r[d] = i.inr(i.r[d])
 
 	case 0x34:
 		i.inrM()
 
 	case 0x05, 0x0d, 0x15, 0x1d, 0x25, 0x2d, 0x3d:
 		d := (opc >> 3) & 0x7
-		i.R[d] = i.dcr(i.R[d])
+		i.r[d] = i.dcr(i.r[d])
 
 	case 0x35:
 		i.dcrM()
@@ -204,9 +204,9 @@ func (i *Intel8080) handleOp(opc byte) error {
 		i.rar()
 
 	case 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa7:
-		// ANA R
+		// ANA r
 		d := opc & 0x7
-		i.ana(i.R[d])
+		i.ana(i.r[d])
 
 	case 0xa6:
 		// ANA M
@@ -217,9 +217,9 @@ func (i *Intel8080) handleOp(opc byte) error {
 		i.ana(i.immediateByte())
 
 	case 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xaf:
-		// XRA R
+		// XRA r
 		d := opc & 0x7
-		i.xra(i.R[d])
+		i.xra(i.r[d])
 
 	case 0xae:
 		// XRA M
@@ -229,9 +229,9 @@ func (i *Intel8080) handleOp(opc byte) error {
 		i.xra(i.immediateByte())
 
 	case 0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb7:
-		// ORA R
+		// ORA r
 		d := opc & 0x7
-		i.ora(i.R[d])
+		i.ora(i.r[d])
 
 	case 0xb6:
 		// ORA M
@@ -242,9 +242,9 @@ func (i *Intel8080) handleOp(opc byte) error {
 		i.ora(i.immediateByte())
 
 	case 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbf:
-		// CMP R
+		// CMP r
 		d := opc & 0x7
-		i.cmp(i.R[d])
+		i.cmp(i.r[d])
 
 	case 0xbe:
 		// CMP M

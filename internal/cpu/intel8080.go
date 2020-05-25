@@ -8,11 +8,39 @@ import (
 
 // TODO: Abstract this to a separate repo and package.
 
+const (
+	clock    = 2000000
+	stepTime = 16
+	cycles   = uint32(float64(stepTime) / (float64(1000) / float64(clock)))
+)
+
+var (
+	//  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+	opCycles = [256]uint32{
+		04, 10, 07, 05, 05, 05, 07, 04, 04, 10, 07, 05, 05, 05, 07, 04, // 0
+		04, 10, 07, 05, 05, 05, 07, 04, 04, 10, 07, 05, 05, 05, 07, 04, // 1
+		04, 10, 16, 05, 05, 05, 07, 04, 04, 10, 16, 05, 05, 05, 07, 04, // 2
+		04, 10, 13, 05, 10, 10, 10, 04, 04, 10, 13, 05, 05, 05, 07, 04, // 3
+		05, 05, 05, 05, 05, 05, 07, 05, 05, 05, 05, 05, 05, 05, 07, 05, // 4
+		05, 05, 05, 05, 05, 05, 07, 05, 05, 05, 05, 05, 05, 05, 07, 05, // 5
+		05, 05, 05, 05, 05, 05, 07, 05, 05, 05, 05, 05, 05, 05, 07, 05, // 6
+		07, 07, 07, 07, 07, 07, 07, 07, 05, 05, 05, 05, 05, 05, 07, 05, // 7
+		04, 04, 04, 04, 04, 04, 07, 04, 04, 04, 04, 04, 04, 04, 07, 04, // 8
+		04, 04, 04, 04, 04, 04, 07, 04, 04, 04, 04, 04, 04, 04, 07, 04, // 9
+		04, 04, 04, 04, 04, 04, 07, 04, 04, 04, 04, 04, 04, 04, 07, 04, // a
+		04, 04, 04, 04, 04, 04, 07, 04, 04, 04, 04, 04, 04, 04, 07, 04, // b
+		05, 10, 10, 10, 11, 11, 07, 11, 05, 10, 10, 10, 11, 17, 07, 11, // c
+		05, 10, 10, 10, 11, 11, 07, 11, 05, 10, 10, 10, 11, 17, 07, 11, // d
+		05, 10, 10, 18, 11, 11, 07, 11, 05, 05, 10, 05, 11, 17, 07, 11, // e
+		05, 10, 10, 04, 11, 11, 07, 11, 05, 05, 10, 04, 11, 17, 07, 11, // f
+	}
+)
+
 type (
 	// Intel8080 represents the Intel 8080 CPU.
 	Intel8080 struct {
 		// Registers including working "scratchpads" and the accumulator.
-		R [8]byte
+		r [8]byte
 
 		// Stack pointer, stores address of last program request in the stack.
 		sp uint16
@@ -37,6 +65,9 @@ type (
 
 		// Output (i.e. sound) handler function.
 		oh ofn
+
+		// Tracks the count of CPU cycles.
+		cyc uint32
 
 		// If set to true the emulation cycle will print debug information.
 		debug bool
@@ -90,6 +121,7 @@ func (i *Intel8080) Step() error {
 	// Use the current value of the program counter to get the next opcode from
 	// the attached memory.
 	opc := i.immediateByte()
+	i.cyc += opCycles[opc]
 
 	// Dump the assembly code if debug mode is on.
 	if i.debug {
@@ -104,13 +136,13 @@ func (i *Intel8080) Step() error {
 			i.cc.p,
 			i.cc.s,
 			i.sp,
-			i.R[A],
-			i.R[B],
-			i.R[C],
-			i.R[D],
-			i.R[E],
-			i.R[H],
-			i.R[L],
+			i.r[A],
+			i.r[B],
+			i.r[C],
+			i.r[D],
+			i.r[E],
+			i.r[H],
+			i.r[L],
 		)
 	}
 
@@ -143,7 +175,7 @@ func (i *Intel8080) immediateWord() uint16 {
 func (i *Intel8080) accumulatorAdd(n, carry byte) {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := uint16(i.R[A]) + uint16(n) + uint16(carry)
+	ans := uint16(i.r[A]) + uint16(n) + uint16(carry)
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
@@ -164,13 +196,13 @@ func (i *Intel8080) accumulatorAdd(n, carry byte) {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = (i.R[A]^uint8(ans)^n)&0x10 != 0
+	i.cc.ac = (i.r[A]^uint8(ans)^n)&0x10 != 0
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
 
 	// Finally update the accumulator.
-	i.R[A] = byte(ans)
+	i.r[A] = byte(ans)
 }
 
 // accumulatorSub subtracts the given byte n from the accumulator and sets the
@@ -178,7 +210,7 @@ func (i *Intel8080) accumulatorAdd(n, carry byte) {
 func (i *Intel8080) accumulatorSub(n, carry byte) {
 	// Perform the arithmetic at higher precision in order to capture the
 	// carry out.
-	ans := uint16(i.R[A]) - uint16(n) - uint16(carry)
+	ans := uint16(i.r[A]) - uint16(n) - uint16(carry)
 
 	// Set the zero condition bit accordingly based on if the result of the
 	// arithmetic was zero.
@@ -200,13 +232,13 @@ func (i *Intel8080) accumulatorSub(n, carry byte) {
 
 	// Set the auxiliary carry condition bit accordingly if the result of
 	// the arithmetic has a carry on the third bit.
-	i.cc.ac = ^(i.R[A]^uint8(ans)^n)&0x10 != 0
+	i.cc.ac = ^(i.r[A]^uint8(ans)^n)&0x10 != 0
 
 	// Set the parity bit.
 	i.cc.setParity(uint8(ans))
 
 	// Finally update the accumulator.
-	i.R[A] = byte(ans)
+	i.r[A] = byte(ans)
 }
 
 // stackAdd adds the given word to the stack.
@@ -223,4 +255,25 @@ func (i *Intel8080) stackPop() uint16 {
 	i.sp += 2
 
 	return n
+}
+
+// Interrupt jumps the CPU to the given address if interrupts are enabled.
+func (i *Intel8080) Interrupt(addr uint16) {
+	if i.ie {
+		i.ie = false
+
+		i.stackAdd(i.pc)
+		i.pc = addr
+		i.cyc += opCycles[0xcd]
+	}
+}
+
+// Cycles returns the current cycle count.
+func (i *Intel8080) Cycles() uint32 {
+	return i.cyc
+}
+
+// Accumulator returns the current state of the accumulator.
+func (i *Intel8080) Accumulator() byte {
+	return i.r[A]
 }

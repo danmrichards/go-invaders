@@ -76,14 +76,22 @@ func (m *Machine) Run() {
 		log.Fatalf("create window: %v", err)
 	}
 
+	// TODO: Implement keyboard input.
+
 	// Emulation loop.
 	for !m.w.Closed() {
 		m.w.UpdateInput()
+
+		// TODO: Emulate 2Mhz CPU timing and 60Mhz graphics refresh rate.
 
 		// Emulate an instruction.
 		if err := m.c.Step(); err != nil {
 			log.Fatal(err)
 		}
+
+		// TODO: Implement interrupt call logic.
+
+		// TODO: Implement screen rendering.
 	}
 }
 

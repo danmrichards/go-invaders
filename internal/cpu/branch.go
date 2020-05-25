@@ -17,8 +17,7 @@ func (i *Intel8080) call() {
 	// bytes in memory.
 	addr := i.immediateWord()
 
-	// Update the stack pointer. Note we're incrementing by 3 to account for
-	// this operation and the two bytes we've read.
+	// Update the stack pointer.
 	i.stackAdd(i.pc)
 
 	i.pc = addr
@@ -151,11 +150,9 @@ func (i *Intel8080) cz() {
 	addr := i.immediateWord()
 
 	if i.cc.z {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -168,11 +165,9 @@ func (i *Intel8080) cnz() {
 	addr := i.immediateWord()
 
 	if !i.cc.z {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -185,11 +180,9 @@ func (i *Intel8080) cic() {
 	addr := i.immediateWord()
 
 	if i.cc.cy {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -202,11 +195,9 @@ func (i *Intel8080) cnc() {
 	addr := i.immediateWord()
 
 	if !i.cc.cy {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -220,11 +211,9 @@ func (i *Intel8080) cpo() {
 	addr := i.immediateWord()
 
 	if !i.cc.p {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -238,11 +227,9 @@ func (i *Intel8080) cpe() {
 	addr := i.immediateWord()
 
 	if i.cc.p {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -256,11 +243,9 @@ func (i *Intel8080) cp() {
 	addr := i.immediateWord()
 
 	if !i.cc.s {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -274,11 +259,9 @@ func (i *Intel8080) cm() {
 	addr := i.immediateWord()
 
 	if i.cc.s {
-		// Update the stack pointer. Note we're incrementing by 3 to account for
-		// this operation and the two bytes we've read.
 		i.stackAdd(i.pc)
-
 		i.pc = addr
+		i.cyc += 6
 	}
 }
 
@@ -288,6 +271,7 @@ func (i *Intel8080) cm() {
 func (i *Intel8080) rnz() {
 	if !i.cc.z {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -297,6 +281,7 @@ func (i *Intel8080) rnz() {
 func (i *Intel8080) rz() {
 	if i.cc.z {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -306,6 +291,7 @@ func (i *Intel8080) rz() {
 func (i *Intel8080) rnc() {
 	if !i.cc.cy {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -315,6 +301,7 @@ func (i *Intel8080) rnc() {
 func (i *Intel8080) rc() {
 	if i.cc.cy {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -325,6 +312,7 @@ func (i *Intel8080) rc() {
 func (i *Intel8080) rpo() {
 	if !i.cc.p {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -335,6 +323,7 @@ func (i *Intel8080) rpo() {
 func (i *Intel8080) rpe() {
 	if i.cc.p {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -345,6 +334,7 @@ func (i *Intel8080) rpe() {
 func (i *Intel8080) rp() {
 	if !i.cc.s {
 		i.ret()
+		i.cyc += 6
 	}
 }
 
@@ -355,6 +345,7 @@ func (i *Intel8080) rp() {
 func (i *Intel8080) rm() {
 	if i.cc.s {
 		i.ret()
+		i.cyc += 6
 	}
 }
 

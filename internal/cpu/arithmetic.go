@@ -156,8 +156,8 @@ func (i *Intel8080) daa() {
 		c = i.cc.cy
 	)
 
-	lsb := i.R[A] & 0x0f
-	msb := i.R[A] >> 4
+	lsb := i.r[A] & 0x0f
+	msb := i.r[A] >> 4
 
 	// If the least significant four bits of the accumulator represents a number
 	// greater than 9, or if the Auxiliary Carry bit is equal to one, the
@@ -175,7 +175,7 @@ func (i *Intel8080) daa() {
 	}
 
 	i.accumulatorAdd(a, 0)
-	i.cc.setParity(i.R[A])
+	i.cc.setParity(i.r[A])
 	i.cc.cy = c
 }
 

@@ -7,7 +7,7 @@ package cpu
 func (i *Intel8080) movRR(opc byte) {
 	d := (opc >> 3) & 0x7
 	s := opc & 0x7
-	i.R[d] = i.R[s]
+	i.r[d] = i.r[s]
 }
 
 // movRR is the "Move Memory to Register" handler.
@@ -17,7 +17,7 @@ func (i *Intel8080) movRR(opc byte) {
 func (i *Intel8080) movMR(opc byte) {
 	d := (opc >> 3) & 0x7
 	a := i.hl()
-	i.R[d] = i.mem.Read(a)
+	i.r[d] = i.mem.Read(a)
 }
 
 // movRR is the "Move Register to Memory" handler.
@@ -27,7 +27,7 @@ func (i *Intel8080) movMR(opc byte) {
 func (i *Intel8080) movRM(opc byte) {
 	s := opc & 0x7
 	a := i.hl()
-	i.mem.Write(a, i.R[s])
+	i.mem.Write(a, i.r[s])
 }
 
 // mvi is the "Move Immediate Data" handler.
@@ -36,7 +36,7 @@ func (i *Intel8080) movRM(opc byte) {
 func (i *Intel8080) mvi(opc byte) {
 	d := (opc >> 3) & 0x7
 	v := i.immediateByte()
-	i.R[d] = v
+	i.r[d] = v
 }
 
 // mvi is the "Move Immediate Data Memory" handler.
@@ -57,7 +57,7 @@ func (i *Intel8080) mviM() {
 // The contents of the memory location addressed by registers B and C, or by
 // registers D and E, replace the contents of the accumulator.
 func (i *Intel8080) ldax(addr uint16) {
-	i.R[A] = i.mem.Read(addr)
+	i.r[A] = i.mem.Read(addr)
 }
 
 // stax is the "Store Accumulator" handler.
@@ -65,7 +65,7 @@ func (i *Intel8080) ldax(addr uint16) {
 // The contents of the accumulator are stored in the memory location addressed
 // by registers B an dC, or by registers 0 and E.
 func (i *Intel8080) stax(addr uint16) {
-	i.mem.Write(addr, i.R[A])
+	i.mem.Write(addr, i.r[A])
 }
 
 // shld is the "Store H and L Direct" handler.

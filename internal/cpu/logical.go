@@ -5,13 +5,13 @@ package cpu
 // The specified byte is logically ANDed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) ana(v uint8) {
-	r := i.R[A] & v
+	r := i.r[A] & v
 	i.cc.cy = false
-	i.cc.ac = ((i.R[A] | v) & 0x08) != 0
+	i.cc.ac = ((i.r[A] | v) & 0x08) != 0
 	i.cc.z = r == 0
 	i.cc.s = r&0x80 != 0
 	i.cc.setParity(r)
-	i.R[A] = r
+	i.r[A] = r
 }
 
 // xra is the "Logical Exclusive-Or Register With Accumulator" handler.
@@ -19,12 +19,12 @@ func (i *Intel8080) ana(v uint8) {
 // The specified byte is EXCLUSIVE-ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) xra(v uint8) {
-	i.R[A] ^= v
+	i.r[A] ^= v
 	i.cc.cy = false
 	i.cc.ac = false
-	i.cc.z = i.R[A] == 0
-	i.cc.s = i.R[A]&0x80 != 0
-	i.cc.setParity(i.R[A])
+	i.cc.z = i.r[A] == 0
+	i.cc.s = i.r[A]&0x80 != 0
+	i.cc.setParity(i.r[A])
 }
 
 // ora is the "Logical OR Register With Accumulator" handler.
@@ -32,12 +32,12 @@ func (i *Intel8080) xra(v uint8) {
 // The specified byte is logically ORed bit by bit with the contents of the
 // accumulator. The Carry bit is reset to zero.
 func (i *Intel8080) ora(v uint8) {
-	i.R[A] |= v
+	i.r[A] |= v
 	i.cc.cy = false
 	i.cc.ac = false
-	i.cc.z = i.R[A] == 0
-	i.cc.s = i.R[A]&0x80 != 0
-	i.cc.setParity(i.R[A])
+	i.cc.z = i.r[A] == 0
+	i.cc.s = i.r[A]&0x80 != 0
+	i.cc.setParity(i.r[A])
 }
 
 // cmp is the "Compare Register With Accumulator" handler.
@@ -52,9 +52,9 @@ func (i *Intel8080) ora(v uint8) {
 // be set if there is no carry out of bit 7, indicating that the contents of REG
 // are greater than the contents of the accumulator, and reset otherwise.
 func (i *Intel8080) cmp(v uint8) {
-	r := int16(i.R[A]) - int16(v)
+	r := int16(i.r[A]) - int16(v)
 	i.cc.cy = r&0x100 != 0
-	i.cc.ac = ^(i.R[A]^uint8(r)^v)&0x10 != 0
+	i.cc.ac = ^(i.r[A]^uint8(r)^v)&0x10 != 0
 	i.cc.z = r&0xff == 0
 	i.cc.s = r&0x80 != 0
 	i.cc.setParity(byte(r))
@@ -67,10 +67,10 @@ func (i *Intel8080) cmp(v uint8) {
 // the high-order bit being transferred to the low-order bit position of the
 // accumulator.
 func (i *Intel8080) rlc() {
-	i.cc.cy = i.R[A]&0x80 != 0
-	i.R[A] <<= 1
+	i.cc.cy = i.r[A]&0x80 != 0
+	i.r[A] <<= 1
 	if i.cc.cy {
-		i.R[A] |= 0x01
+		i.r[A] |= 0x01
 	}
 }
 
@@ -81,10 +81,10 @@ func (i *Intel8080) rlc() {
 // the low-order bit being transferred to the high-order bit position of the
 // accumulator.
 func (i *Intel8080) rrc() {
-	i.cc.cy = i.R[A]&0x1 != 0
-	i.R[A] >>= 1
+	i.cc.cy = i.r[A]&0x1 != 0
+	i.r[A] >>= 1
 	if i.cc.cy {
-		i.R[A] |= 0x80
+		i.r[A] |= 0x80
 	}
 }
 
@@ -96,10 +96,10 @@ func (i *Intel8080) rrc() {
 // bit replaces the high-order bit of the accumulator.
 func (i *Intel8080) ral() {
 	cy := i.cc.cy
-	i.cc.cy = i.R[A]&0x80 != 0
-	i.R[A] <<= 1
+	i.cc.cy = i.r[A]&0x80 != 0
+	i.r[A] <<= 1
 	if cy {
-		i.R[A] |= 0x01
+		i.r[A] |= 0x01
 	}
 }
 
@@ -111,10 +111,10 @@ func (i *Intel8080) ral() {
 // bit replaces the high-order bit of the accumulator.
 func (i *Intel8080) rar() {
 	cy := i.cc.cy
-	i.cc.cy = i.R[A]&0x1 != 0
-	i.R[A] >>= 1
+	i.cc.cy = i.r[A]&0x1 != 0
+	i.r[A] >>= 1
 	if cy {
-		i.R[A] |= 0x80
+		i.r[A] |= 0x80
 	}
 }
 
@@ -125,5 +125,5 @@ func (i *Intel8080) rar() {
 //
 // E.g. 01010001 -> 10101110
 func (i *Intel8080) cma() {
-	i.R[A] ^= 0xff
+	i.r[A] ^= 0xff
 }
