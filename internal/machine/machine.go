@@ -2,6 +2,7 @@ package machine
 
 import (
 	"log"
+	"time"
 
 	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/faiface/pixel"
@@ -109,11 +110,18 @@ func (m *Machine) Run() {
 
 	// TODO: Implement keyboard input.
 
+	start := time.Now()
+
 	for !m.w.Closed() && m.c.Running() {
-		if err := m.step(); err != nil {
-			log.Fatalf("step: %v\n", err)
+		// Throttle to one step per ~16ms, to better reproduce the speed of the
+		// original machine.
+		dt := time.Since(start).Milliseconds()
+		if float64(dt) > (1/float64(screenRefresh))*1000 {
+			if err := m.step(); err != nil {
+				log.Fatalf("step: %v\n", err)
+			}
+			m.render()
 		}
-		m.render()
 	}
 }
 
