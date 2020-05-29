@@ -71,7 +71,7 @@ type (
 	Option func(*Intel8080)
 
 	// Input/Ouput handlers.
-	ifn func(byte)
+	ifn func(byte) byte
 	ofn func(byte)
 )
 

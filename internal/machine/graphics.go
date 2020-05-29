@@ -19,9 +19,6 @@ func (m *Machine) render() {
 	// Update the window.
 	imd.Draw(m.w)
 	m.w.Update()
-
-	// Clear the screen, ready for the next frame.
-	m.w.Clear(color.Black)
 }
 
 // draw draws the current screen onto the given draw object.

@@ -10,6 +10,6 @@ func (i *Intel8080) out() {
 // in is the "Input" handler.
 func (i *Intel8080) in() {
 	if i.ih != nil {
-		i.ih(i.immediateByte())
+		i.r[A] = i.ih(i.immediateByte())
 	}
 }

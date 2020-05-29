@@ -35,7 +35,12 @@ func main() {
 	}
 
 	// Instantiate the Space Invaders machine.
-	m := machine.New(mem, opts...)
+	m, err := machine.New(mem, opts...)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: Log the controls.
 
 	pixelgl.Run(m.Run)
 }

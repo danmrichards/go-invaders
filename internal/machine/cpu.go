@@ -28,6 +28,13 @@ type runner interface {
 	Running() bool
 }
 
+// accumulator is the interface that wraps the basic Accumulator method.
+//
+// Accumulator returns the current contents of the accumulator.
+type accumulator interface {
+	Accumulator() byte
+}
+
 // processor is the interface that implementations of a CPU are epxected to
 // implement.
 type processor interface {
@@ -35,4 +42,5 @@ type processor interface {
 	interrupter
 	cycler
 	runner
+	accumulator
 }

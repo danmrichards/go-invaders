@@ -1,8 +1,11 @@
 package machine
 
 import (
+	"image/color"
 	"log"
 	"time"
+
+	"github.com/danmrichards/go-invaders/internal/sound"
 
 	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/faiface/pixel"
@@ -44,11 +47,34 @@ type (
 		// The render window.
 		w *pixelgl.Window
 
+		// Sound player.
+		p *sound.Player
+
 		// The address of the next interrupt to send to the CPU.
 		ni uint16
 
 		// The video scale factor.
 		sf int
+
+		// The Intel 8080 does not include opcodes for shifting by anything
+		// other than 1 bit. Hence it would take thousands of instruction calls
+		// to perform a multi-bit shift.
+		//
+		// Consequently the Space Invaders machine had hardware for bit
+		// shifting. Store the data to shift and the offset we'll shift by.
+		so uint16
+		sd uint16
+
+		// Watchdog (read or write to reset).
+		wd byte
+
+		// Sound banks which store the currently playing sound.
+		snd1 byte
+		snd2 byte
+
+		// Player ports.
+		p1 byte
+		p2 byte
 
 		// Flag for debug mode.
 		debug bool
@@ -73,10 +99,11 @@ func WithScaleFactor(sf int) Option {
 }
 
 // New returns an instantiated Space Invaders machine.
-func New(mem cpu.MemReadWriter, opts ...Option) *Machine {
-	m := &Machine{
+func New(mem cpu.MemReadWriter, opts ...Option) (m *Machine, err error) {
+	m = &Machine{
 		mem: mem,
 		ni:  0x08,
+		p1:  1 << 3,
 	}
 
 	for _, o := range opts {
@@ -93,7 +120,12 @@ func New(mem cpu.MemReadWriter, opts ...Option) *Machine {
 	}
 	m.c = cpu.NewIntel8080(mem, copts...)
 
-	return m
+	m.p, err = sound.NewPlayer()
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 // Run emulates the Space Invaders machine.
@@ -108,8 +140,6 @@ func (m *Machine) Run() {
 		log.Fatalf("create window: %v", err)
 	}
 
-	// TODO: Implement keyboard input.
-
 	start := time.Now()
 
 	for !m.w.Closed() && m.c.Running() {
@@ -122,6 +152,9 @@ func (m *Machine) Run() {
 			}
 			m.render()
 		}
+
+		// Clear the screen, ready for the next frame.
+		m.w.Clear(color.Black)
 	}
 }
 
