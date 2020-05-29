@@ -21,6 +21,8 @@ func main() {
 	flag.IntVar(&scaleFactor, "scale-factor", 2, "Scales the original video resolution (224x256)")
 	flag.Parse()
 
+	// TODO: Implement configuration for colours.
+
 	// Instantiate 64K of memory.
 	mem := make(memory.Basic, 65536)
 	if err := mem.LoadROM(dir); err != nil {
