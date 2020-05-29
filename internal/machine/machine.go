@@ -5,9 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/danmrichards/go-invaders/internal/sound"
-
 	"github.com/danmrichards/go-invaders/internal/cpu"
+	"github.com/danmrichards/go-invaders/internal/sound"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -72,10 +71,6 @@ type (
 		snd1 byte
 		snd2 byte
 
-		// Player ports.
-		p1 byte
-		p2 byte
-
 		// Flag for debug mode.
 		debug bool
 	}
@@ -103,7 +98,6 @@ func New(mem cpu.MemReadWriter, opts ...Option) (m *Machine, err error) {
 	m = &Machine{
 		mem: mem,
 		ni:  0x08,
-		p1:  1 << 3,
 	}
 
 	for _, o := range opts {

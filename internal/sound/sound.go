@@ -29,7 +29,7 @@ var (
 )
 
 func init() {
-	speaker.Init(sr, sr.N(time.Second/10))
+	speaker.Init(sr, sr.N(time.Second/10)) //nolint:errcheck
 }
 
 type sound struct {
