@@ -1,6 +1,22 @@
 # Go Invaders
 A [Space Invaders][1] emulator implemented in Go
 
+## Installation
+```bash
+$ go get -u github.com/danmrichards/go-invaders/cmd/go-invaders/...
+```
+## Usage
+In order to play Space Invaders you will need to supply the ROM files. For
+obvious reasons they are not included in this repo.
+```
+  -debug
+        Run the emulator in debug mode
+  -dir string
+        Path to directory containing ROM files (default "roms")
+  -scale-factor int
+        Scales the original video resolution (224x256) (default 2)
+```
+
 ## Building From Source
 ### Pre-requisites
 The emulator uses the following packages which have requirements of their own
@@ -22,11 +38,6 @@ To build from source on Windows run this command:
 go build -ldflags="-s -w" -o bin/go-invaders-windows-amd64.exe ./cmd/go-invaders
 ```
 > Swap out `amd64` for the relevant architecture. See `go env GOARCH`
-
-## Installation
-```bash
-$ go get -u github.com/danmrichards/go-invaders/cmd/go-invaders/...
-```
 
 [1]: https://en.wikipedia.org/wiki/Space_Invaders
 [2]: https://github.com/faiface/pixel#requirements
