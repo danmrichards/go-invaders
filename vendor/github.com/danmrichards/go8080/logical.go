@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // ana is the "Logical AND Register With Accumulator" handler.
 //

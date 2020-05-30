@@ -12,8 +12,6 @@ func (m *Machine) input(port byte) byte {
 		fmt.Printf("IN: %02x\n", port)
 	}
 
-	// TODO(dr): tweak the controls.
-
 	var n byte
 	switch port {
 	case 0:
@@ -24,7 +22,7 @@ func (m *Machine) input(port byte) byte {
 		n |= 0x01 << 3
 
 		// Credit.
-		if m.w.Pressed(pixelgl.KeyEnter) {
+		if m.w.Pressed(pixelgl.KeyC) {
 			n |= 0x01
 		}
 
@@ -39,7 +37,7 @@ func (m *Machine) input(port byte) byte {
 		}
 
 		// 1P shot.
-		if m.w.Pressed(pixelgl.KeyE) {
+		if m.w.Pressed(pixelgl.KeyW) {
 			n |= 0x01 << 4
 		}
 
@@ -49,7 +47,7 @@ func (m *Machine) input(port byte) byte {
 		}
 
 		// 1P right.
-		if m.w.Pressed(pixelgl.KeyW) {
+		if m.w.Pressed(pixelgl.KeyE) {
 			n |= 0x01 << 6
 		}
 	case 2:
@@ -68,12 +66,12 @@ func (m *Machine) input(port byte) byte {
 		}
 
 		// 2P shot.
-		if m.w.Pressed(pixelgl.KeyI) {
+		if m.w.Pressed(pixelgl.KeyO) {
 			n |= 0x01 << 4
 		}
 
 		// 2P left.
-		if m.w.Pressed(pixelgl.KeyO) {
+		if m.w.Pressed(pixelgl.KeyI) {
 			n |= 0x01 << 5
 		}
 

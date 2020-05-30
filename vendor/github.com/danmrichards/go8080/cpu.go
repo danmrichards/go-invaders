@@ -1,12 +1,10 @@
-package cpu
+package go8080
 
 import (
 	"fmt"
 
 	"github.com/danmrichards/disassemble8080/pkg/dasm"
 )
-
-// TODO: Abstract this to a separate repo and package.
 
 var (
 	//  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f

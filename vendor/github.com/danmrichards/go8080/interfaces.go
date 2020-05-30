@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // MemReader is the interface that wraps the basic Read and ReadAll methods.
 //

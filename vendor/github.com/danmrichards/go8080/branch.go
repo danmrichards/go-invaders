@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // jmp is the "Jump" handler.
 //

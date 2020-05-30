@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // popPSW is the "Pop Data Off Stack PSW" handler.
 //

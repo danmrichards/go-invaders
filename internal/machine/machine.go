@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/danmrichards/go-invaders/internal/cpu"
 	"github.com/danmrichards/go-invaders/internal/sound"
+	cpu "github.com/danmrichards/go8080"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )

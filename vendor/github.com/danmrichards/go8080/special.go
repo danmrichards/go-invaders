@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // ei is the "enable interrupt" handler.
 func (i *Intel8080) ei() {

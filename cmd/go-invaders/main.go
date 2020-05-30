@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/danmrichards/go-invaders/internal/machine"
@@ -42,7 +43,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: Log the controls.
+	fmt.Println("*****************************")
+	fmt.Println("* Welcome to Space Invaders *")
+	fmt.Println("*                           *")
+	fmt.Println("* Insert coin = C           *")
+	fmt.Println("* 1P start = 1              *")
+	fmt.Println("* 2P start = 2              *")
+	fmt.Println("* 1P shoot = W              *")
+	fmt.Println("* 1P left = Q               *")
+	fmt.Println("* 1P right = E              *")
+	fmt.Println("* 2P shoot = O              *")
+	fmt.Println("* 2P left = I               *")
+	fmt.Println("* 2P right = P              *")
+	fmt.Println("* Tilt = T                  *")
+	fmt.Println("*                           *")
+	fmt.Println("*****************************")
 
 	pixelgl.Run(m.Run)
 }

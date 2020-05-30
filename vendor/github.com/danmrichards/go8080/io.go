@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // out is the "Output" handler.
 func (i *Intel8080) out() {

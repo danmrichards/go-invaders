@@ -3,7 +3,7 @@ module github.com/danmrichards/go-invaders
 go 1.14
 
 require (
-	github.com/danmrichards/disassemble8080 v1.1.0
+	github.com/danmrichards/go8080 v1.0.0
 	github.com/faiface/beep v1.0.2
 	github.com/faiface/pixel v0.9.0
 	github.com/gobuffalo/packr/v2 v2.8.0

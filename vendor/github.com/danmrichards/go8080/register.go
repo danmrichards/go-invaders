@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 const (
 	// Define the named working registers.

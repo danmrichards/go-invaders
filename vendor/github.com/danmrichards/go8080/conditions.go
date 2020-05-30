@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // conditions represents the condition bits of the Intel 8080.
 //

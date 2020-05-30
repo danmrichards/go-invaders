@@ -1,4 +1,4 @@
-package cpu
+package go8080
 
 // movRR is the "Move Register to Register" handler.
 //
