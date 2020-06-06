@@ -29,15 +29,17 @@ before we can build with them. Follow the instructions for each:
 ### Building
 Clone this repo and build the binary:
 ```bash
-$ make
+$ make build
 ```
 
-#### Windows
-To build from source on Windows run this command: 
-```bash
-go build -ldflags="-s -w" -o bin/go-invaders-windows-amd64.exe ./cmd/go-invaders
+#### Cross compile for Windows
+If you are running on Linux, it is possible to cross-compile the application for Windows.
+
+In order to do this you will need a GCC compiler that targets Windows, such as mingw. Once installed, you can cross compile like so:
 ```
-> Swap out `amd64` for the relevant architecture. See `go env GOARCH`
+$ GOOS=windows GOARCH=${GOARCH} CGO_ENABLED=1 CC=${GCC} go build -ldflags="-s -w" -o bin/go-invaders-windows-${GOARCH}.exe ./cmd/go-invaders
+```
+> Replace `${GOARCH}` with your target architecture (e.g. amd64) and replace ${GCC} with the name of your Windows GCC (e.g. x86_64-w64-mingw32-gcc)
 
 [1]: https://en.wikipedia.org/wiki/Space_Invaders
 [2]: https://github.com/faiface/pixel#requirements
